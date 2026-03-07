@@ -4,7 +4,12 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useRouter, usePathname } from "next/navigation";
 
 const AUTH_TOKEN_KEY = process.env.NEXT_PUBLIC_AUTH_TOKEN_KEY || "token";
-const MAIN_LOGIN_URL = process.env.NEXT_PUBLIC_MAIN_LOGIN_URL || "/";
+const DEFAULT_MAIN_LOGIN_URL = "https://aura-fx.com/login";
+const MAIN_LOGIN_URL =
+  process.env.NEXT_PUBLIC_MAIN_LOGIN_URL?.trim() &&
+  process.env.NEXT_PUBLIC_MAIN_LOGIN_URL !== "/"
+    ? process.env.NEXT_PUBLIC_MAIN_LOGIN_URL.trim()
+    : DEFAULT_MAIN_LOGIN_URL;
 
 type User = {
   id: number;

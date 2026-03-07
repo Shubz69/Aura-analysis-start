@@ -1,7 +1,4 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-
-const MAIN_LOGIN_URL = process.env.NEXT_PUBLIC_MAIN_LOGIN_URL || "/";
+import { HomeCTA } from "@/components/HomeCTA";
 
 export default function HomePage() {
   return (
@@ -14,14 +11,7 @@ export default function HomePage() {
         <p className="text-sm text-muted-foreground">
           Use your existing Aura FX account. Log in on the main site, then return here.
         </p>
-        <div className="flex gap-4 justify-center">
-          <Button asChild>
-            <a href={MAIN_LOGIN_URL}>Sign in on main site</a>
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/dashboard">Open dashboard</Link>
-          </Button>
-        </div>
+        <HomeCTA />
       </div>
     </div>
   );
