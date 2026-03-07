@@ -1,22 +1,24 @@
-import * as metrics from "@/lib/analytics";
+import { buildKpiSummary } from "@/lib/analytics/kpis";
+import { consistencyScore } from "@/lib/analytics/consistency";
 import { LeaderboardClient } from "./LeaderboardClient";
 import { BYPASS_AUTH } from "@/lib/appConfig";
 import { DEMO_TRADES } from "@/lib/demo-data";
 
 export default async function LeaderboardPage() {
+  const kpi = BYPASS_AUTH && DEMO_TRADES.length > 0 ? buildKpiSummary(DEMO_TRADES) : null;
   const rows =
-    BYPASS_AUTH && DEMO_TRADES.length > 0
+    kpi
       ? [
           {
             id: "1",
             name: "Shubz",
-            totalTrades: metrics.totalTrades(DEMO_TRADES),
-            winRate: metrics.winRate(DEMO_TRADES),
-            avgR: metrics.averageR(DEMO_TRADES),
-            totalPnL: metrics.totalPnL(DEMO_TRADES),
-            profitFactor: metrics.profitFactor(DEMO_TRADES),
-            consistencyScore: metrics.consistencyScore(DEMO_TRADES),
-            bestPair: metrics.bestPair(DEMO_TRADES),
+            totalTrades: kpi.totalTrades,
+            winRate: kpi.winRate,
+            avgR: kpi.averageR,
+            totalPnL: kpi.totalPnL,
+            profitFactor: Number.isFinite(kpi.profitFactor) ? kpi.profitFactor : 0,
+            consistencyScore: consistencyScore(DEMO_TRADES),
+            bestPair: kpi.bestPair,
           },
         ]
       : [];

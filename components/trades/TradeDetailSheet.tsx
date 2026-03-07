@@ -8,7 +8,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { formatCurrency, formatNumber } from "@/lib/utils";
+import { formatCurrencySafe, formatNumber } from "@/lib/utils";
 import type { Trade, TradeChecklistItem } from "@/types";
 import { Pencil, Trash2 } from "lucide-react";
 
@@ -79,10 +79,10 @@ export function TradeDetailSheet({
               <LabelValue label="Stop loss" value={formatNumber(trade.stop_loss)} />
               <LabelValue label="Take profit" value={formatNumber(trade.take_profit)} />
               <LabelValue label="Risk %" value={`${trade.risk_percent}%`} />
-              <LabelValue label="Risk amount" value={formatCurrency(trade.risk_amount)} />
+              <LabelValue label="Risk amount" value={formatCurrencySafe(trade.risk_amount)} />
               <LabelValue label="Position size" value={formatNumber(trade.position_size, 4)} />
               <LabelValue label="R:R" value={formatNumber(trade.rr, 2)} />
-              <LabelValue label="PnL" value={formatCurrency(trade.pnl)} className={trade.pnl >= 0 ? "text-emerald-500" : "text-red-500"} />
+              <LabelValue label="PnL" value={formatCurrencySafe(trade.pnl)} className={trade.pnl >= 0 ? "text-emerald-500" : "text-red-500"} />
               <LabelValue label="R multiple" value={formatNumber(trade.r_multiple, 2)} />
               <LabelValue label="Checklist" value={`${trade.checklist_score}/${trade.checklist_total} (${trade.checklist_percent}%)`} />
               <LabelValue label="Grade" value={trade.trade_grade ?? "—"} />

@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { formatCurrency, formatPercent } from "@/lib/utils";
+import { formatCurrencySafe, formatPercentSafe, formatRSafe } from "@/lib/utils";
 
 type SortKey = "totalPnL" | "winRate" | "totalTrades" | "avgR" | "profitFactor" | "consistencyScore";
 
@@ -102,15 +102,15 @@ export function LeaderboardClient({ rows, isAdmin }: LeaderboardClientProps) {
           {sorted.map((row, i) => (
             <TableRow key={row.id}>
               <TableCell className="font-medium">{i + 1}</TableCell>
-              <TableCell>{row.name}</TableCell>
+              <TableCell>{row.name ?? "—"}</TableCell>
               <TableCell>{row.totalTrades}</TableCell>
-              <TableCell>{formatPercent(row.winRate)}</TableCell>
-              <TableCell>{row.avgR.toFixed(2)}</TableCell>
+              <TableCell>{formatPercentSafe(row.winRate)}</TableCell>
+              <TableCell>{formatRSafe(row.avgR)}</TableCell>
               <TableCell className={`text-right ${row.totalPnL >= 0 ? "text-emerald-500" : "text-red-500"}`}>
-                {formatCurrency(row.totalPnL)}
+                {formatCurrencySafe(row.totalPnL)}
               </TableCell>
-              <TableCell>{row.profitFactor === Infinity ? "∞" : row.profitFactor.toFixed(2)}</TableCell>
-              <TableCell>{row.consistencyScore}</TableCell>
+              <TableCell>{Number.isFinite(row.profitFactor) && row.profitFactor > 0 ? row.profitFactor.toFixed(2) : "—"}</TableCell>
+              <TableCell>{Number.isFinite(row.consistencyScore) ? Math.round(row.consistencyScore) : "—"}</TableCell>
               {isAdmin && <TableCell>{row.bestPair ?? "—"}</TableCell>}
             </TableRow>
           ))}

@@ -22,7 +22,7 @@ import {
 import { TradeDetailSheet } from "@/components/trades/TradeDetailSheet";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatCurrency, formatNumber } from "@/lib/utils";
+import { formatCurrencySafe, formatNumber } from "@/lib/utils";
 import type { Trade } from "@/types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -194,7 +194,7 @@ export function JournalClient({ initialTrades, openTradeId }: JournalClientProps
                     <TableCell>{t.risk_percent}%</TableCell>
                     <TableCell>{t.result}</TableCell>
                     <TableCell className={`text-right ${t.pnl >= 0 ? "text-emerald-500" : "text-red-500"}`}>
-                      {formatCurrency(t.pnl)}
+                      {formatCurrencySafe(t.pnl)}
                     </TableCell>
                     <TableCell className="text-right">{formatNumber(t.r_multiple, 2)}</TableCell>
                     <TableCell>{t.session ?? "—"}</TableCell>

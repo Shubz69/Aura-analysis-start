@@ -18,7 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, BarChart3, AlertCircle } from "lucide-react";
-import { formatCurrency, formatPercent } from "@/lib/utils";
+import { formatCurrencySafe, formatPercentSafe, formatRSafe } from "@/lib/utils";
 
 interface OverviewClientProps {
   kpis: {
@@ -109,16 +109,16 @@ export function OverviewClient({
         <KPICard title="Total Trades" value={displayKpis.totalTrades} />
         <KPICard
           title="Win Rate"
-          value={displayKpis.totalTrades ? formatPercent(displayKpis.winRate) : "—"}
+          value={displayKpis.totalTrades ? formatPercentSafe(displayKpis.winRate) : "—"}
           trend={displayKpis.winRate >= 50 ? "up" : "down"}
         />
         <KPICard
           title="Average R"
-          value={displayKpis.totalTrades ? displayKpis.avgR.toFixed(2) : "—"}
+          value={displayKpis.totalTrades ? formatRSafe(displayKpis.avgR) : "—"}
         />
         <KPICard
           title="Total PnL"
-          value={formatCurrency(displayKpis.totalPnL)}
+          value={formatCurrencySafe(displayKpis.totalPnL)}
           trend={displayKpis.totalPnL >= 0 ? "up" : "down"}
         />
       </motion.div>
@@ -126,9 +126,9 @@ export function OverviewClient({
       <motion.div variants={item} className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
         <KPICard
           title="Profit Factor"
-          value={displayKpis.totalTrades ? (displayKpis.profitFactor === Infinity ? "∞" : displayKpis.profitFactor.toFixed(2)) : "—"}
+          value={displayKpis.totalTrades ? (Number.isFinite(displayKpis.profitFactor) && displayKpis.profitFactor > 0 ? displayKpis.profitFactor.toFixed(2) : "—") : "—"}
         />
-        <KPICard title="Average RR" value={displayKpis.totalTrades ? displayKpis.avgRR.toFixed(2) : "—"} />
+        <KPICard title="Average RR" value={displayKpis.totalTrades ? formatRSafe(displayKpis.avgRR) : "—"} />
         <KPICard title="Best Pair" value={displayKpis.bestPair ?? "—"} />
         <KPICard title="Worst Pair" value={displayKpis.worstPair ?? "—"} />
       </motion.div>
@@ -202,7 +202,7 @@ export function OverviewClient({
                         <TableCell className="hidden sm:table-cell">{t.direction}</TableCell>
                         <TableCell>{t.result}</TableCell>
                         <TableCell className={`text-right font-medium ${t.pnl >= 0 ? "text-emerald-500" : "text-red-500"}`}>
-                          {formatCurrency(t.pnl)}
+                          {formatCurrencySafe(t.pnl)}
                         </TableCell>
                       </TableRow>
                     ))}

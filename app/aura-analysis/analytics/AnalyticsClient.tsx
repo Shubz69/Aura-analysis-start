@@ -5,7 +5,7 @@ import { KPICard } from "@/components/dashboard/KPICard";
 import { EquityCurveChart } from "@/components/charts/EquityCurveChart";
 import { PerformanceByPairChart } from "@/components/charts/PerformanceByPairChart";
 import { SessionChart } from "@/components/charts/SessionChart";
-import { formatCurrency, formatPercent } from "@/lib/utils";
+import { formatCurrencySafe, formatPercentSafe, formatRSafe } from "@/lib/utils";
 
 interface AnalyticsClientProps {
   stats: {
@@ -43,22 +43,22 @@ export function AnalyticsClient({
       )}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <KPICard title="Total trades" value={stats.totalTrades} />
-        <KPICard title="Win rate" value={formatPercent(stats.winRate)} trend={stats.winRate >= 50 ? "up" : "down"} />
-        <KPICard title="Average R" value={stats.avgR.toFixed(2)} />
-        <KPICard title="Total PnL" value={formatCurrency(stats.totalPnL)} trend={stats.totalPnL >= 0 ? "up" : "down"} />
+        <KPICard title="Win rate" value={formatPercentSafe(stats.winRate)} trend={stats.winRate >= 50 ? "up" : "down"} />
+        <KPICard title="Average R" value={formatRSafe(stats.avgR)} />
+        <KPICard title="Total PnL" value={formatCurrencySafe(stats.totalPnL)} trend={stats.totalPnL >= 0 ? "up" : "down"} />
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <KPICard title="Profit factor" value={stats.profitFactor === Infinity ? "∞" : stats.profitFactor.toFixed(2)} />
-        <KPICard title="Expectancy (R)" value={stats.expectancy.toFixed(2)} />
-        <KPICard title="Max drawdown" value={formatCurrency(stats.maxDrawdown)} trend="down" />
-        <KPICard title="Consistency score" value={stats.consistency} />
+        <KPICard title="Profit factor" value={Number.isFinite(stats.profitFactor) && stats.profitFactor > 0 ? stats.profitFactor.toFixed(2) : "—"} />
+        <KPICard title="Expectancy (R)" value={formatRSafe(stats.expectancy)} />
+        <KPICard title="Max drawdown" value={formatCurrencySafe(stats.maxDrawdown)} trend="down" />
+        <KPICard title="Consistency score" value={Number.isFinite(stats.consistency) ? Math.round(stats.consistency) : "—"} />
       </div>
       <div className="grid gap-4 md:grid-cols-2">
         <KPICard title="Longest win streak" value={stats.maxWinStreak} />
         <KPICard title="Longest loss streak" value={stats.maxLossStreak} />
       </div>
       <div className="grid gap-4 md:grid-cols-2">
-        <KPICard title="Avg checklist %" value={formatPercent(stats.avgChecklist)} />
+        <KPICard title="Avg checklist %" value={formatPercentSafe(stats.avgChecklist)} />
       </div>
 
       <Card className="glass">

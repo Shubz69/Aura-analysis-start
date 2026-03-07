@@ -24,7 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { formatCurrency, formatNumber } from "@/lib/utils";
+import { formatCurrencySafe, formatNumber, formatRR, formatDistance, formatPositionSize } from "@/lib/utils";
+import { getAssetMetadata } from "@/lib/config/auraAnalysisAssets";
 import type { Asset } from "@/types";
 
 interface TradeCalculatorFormProps {
@@ -78,13 +79,29 @@ export function TradeCalculatorForm({
   const tp = watchValues.takeProfit || 0;
 
   const assetMeta = useMemo(() => assets.find((a) => a.symbol === pair), [assets, pair]);
+  const assetConfig = useMemo(() => getAssetMetadata(pair), [pair]);
+  const registryMeta = useMemo(
+    () =>
+      assetMeta
+        ? {
+            pip_multiplier: assetMeta.pip_multiplier,
+            pip_value_hint: assetMeta.pip_value_hint ?? undefined,
+            contract_size_hint: assetMeta.contract_size_hint ?? undefined,
+          }
+        : {
+            pip_multiplier: assetConfig.pipMultiplier,
+            pip_value_hint: assetConfig.pipValueHint ?? undefined,
+            contract_size_hint: assetConfig.contractSizeHint ?? undefined,
+          },
+    [assetMeta, assetConfig]
+  );
 
   const computed = useMemo((): ComputedValues | null => {
     if (!entry || !stop || !tp || balance <= 0 || riskPercent <= 0) return null;
     if (stop === entry || tp === entry) return null;
     const riskAmount = calcRiskAmount(balance, riskPercent);
-    const stopLossPips = calcStopLossDistance(entry, stop, pair, assetMeta ?? undefined);
-    const takeProfitPips = calcTakeProfitDistance(entry, tp, pair, assetMeta ?? undefined);
+    const stopLossPips = calcStopLossDistance(entry, stop, pair, registryMeta);
+    const takeProfitPips = calcTakeProfitDistance(entry, tp, pair, registryMeta);
     const rr = calcRR(entry, stop, tp);
     const positionSize = calcPositionSize({
       balance,
@@ -92,22 +109,22 @@ export function TradeCalculatorForm({
       entry,
       stop,
       symbol: pair,
-      registryMeta: assetMeta ?? undefined,
+      registryMeta,
     });
-    const potentialProfit = calcPotentialProfit(entry, tp, positionSize, pair, assetMeta ?? undefined);
-    const potentialLoss = calcPotentialLoss(entry, stop, positionSize, pair, assetMeta ?? undefined);
+    const potentialProfit = calcPotentialProfit(entry, tp, positionSize, pair, registryMeta);
+    const potentialLoss = calcPotentialLoss(entry, stop, positionSize, pair, registryMeta);
     const rMultiple = riskAmount > 0 ? potentialProfit / riskAmount : 0;
     return {
       riskAmount,
       stopLossPips,
-      takeProfitPips: takeProfitPips,
+      takeProfitPips,
       rr,
       positionSize,
       potentialProfit,
       potentialLoss,
       rMultiple,
     };
-  }, [entry, stop, tp, balance, riskPercent, pair, assetMeta]);
+  }, [entry, stop, tp, balance, riskPercent, pair, registryMeta]);
 
   useEffect(() => {
     form.setValue("direction", direction);
@@ -135,13 +152,13 @@ export function TradeCalculatorForm({
                   value={pair}
                   onValueChange={(v) => form.setValue("pair", v)}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select pair" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[100] max-h-[280px]" position="popper">
                     {assetOptions.map((a) => (
                       <SelectItem key={a.id} value={a.symbol}>
-                        {a.display_name}
+                        {a.symbol} — {a.display_name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -260,14 +277,14 @@ export function TradeCalculatorForm({
           <CardContent className="space-y-3 text-sm">
             {computed ? (
               <>
-                <Row label="Risk amount" value={formatCurrency(computed.riskAmount)} />
-                <Row label="Stop loss (pips/pts)" value={formatNumber(computed.stopLossPips, 1)} />
-                <Row label="Take profit (pips/pts)" value={formatNumber(computed.takeProfitPips, 1)} />
-                <Row label="Risk reward ratio" value={computed.rr.toFixed(2)} />
-                <Row label="Position size" value={formatNumber(computed.positionSize, 4)} />
-                <Row label="Potential profit" value={formatCurrency(computed.potentialProfit)} className="text-emerald-500" />
-                <Row label="Potential loss" value={formatCurrency(computed.potentialLoss)} className="text-red-500" />
-                <Row label="R multiple (if TP hit)" value={computed.rMultiple.toFixed(2)} />
+                <Row label="Risk amount" value={formatCurrencySafe(computed.riskAmount)} />
+                <Row label={`Stop loss (${assetConfig.distanceType === "pip" ? "pips" : assetConfig.distanceType === "point" ? "pts" : "units"})`} value={formatDistance(computed.stopLossPips, assetConfig.distanceType, 1)} />
+                <Row label={`Take profit (${assetConfig.distanceType === "pip" ? "pips" : assetConfig.distanceType === "point" ? "pts" : "units"})`} value={formatDistance(computed.takeProfitPips, assetConfig.distanceType, 1)} />
+                <Row label="Risk:reward" value={formatRR(computed.rr)} />
+                <Row label="Position size" value={formatPositionSize(computed.positionSize, assetConfig.assetClass === "indices" ? "contracts" : "lots", 4)} />
+                <Row label="Potential profit" value={formatCurrencySafe(computed.potentialProfit)} className="text-emerald-500" />
+                <Row label="Potential loss" value={formatCurrencySafe(computed.potentialLoss)} className="text-red-500" />
+                <Row label="R multiple (if TP hit)" value={formatRR(computed.rMultiple)} />
               </>
             ) : (
               <p className="text-muted-foreground">Enter entry, stop loss, and take profit to see calculations.</p>

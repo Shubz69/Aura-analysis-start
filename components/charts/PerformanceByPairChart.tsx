@@ -1,6 +1,7 @@
 "use client";
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { formatCurrencySafe } from "@/lib/utils";
 
 interface PairPoint {
   pair: string;
@@ -13,7 +14,8 @@ interface PerformanceByPairChartProps {
 }
 
 export function PerformanceByPairChart({ data, height = 280 }: PerformanceByPairChartProps) {
-  if (!data.length) {
+  const safeData = data.map((d) => ({ ...d, pnl: Number.isFinite(d.pnl) ? d.pnl : 0 }));
+  if (!safeData.length) {
     return (
       <div
         className="flex items-center justify-center rounded-lg border border-border bg-card/30 text-muted-foreground text-sm"
@@ -25,9 +27,9 @@ export function PerformanceByPairChart({ data, height = 280 }: PerformanceByPair
   }
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={data} layout="vertical" margin={{ top: 5, right: 20, left: 60, bottom: 5 }}>
+      <BarChart data={safeData} layout="vertical" margin={{ top: 5, right: 20, left: 60, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-        <XAxis type="number" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => `$${v}`} />
+        <XAxis type="number" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" tickFormatter={(v) => formatCurrencySafe(Number(v), 0)} />
         <YAxis type="category" dataKey="pair" tick={{ fontSize: 12 }} stroke="hsl(var(--muted-foreground))" width={55} />
         <Tooltip
           contentStyle={{
@@ -35,19 +37,10 @@ export function PerformanceByPairChart({ data, height = 280 }: PerformanceByPair
             border: "1px solid hsl(var(--border))",
             borderRadius: "var(--radius)",
           }}
-          formatter={(value: number) => [formatCurrency(value), "PnL"]}
+          formatter={(value: number) => [formatCurrencySafe(Number(value), 0), "PnL"]}
         />
         <Bar dataKey="pnl" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
-}
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
 }

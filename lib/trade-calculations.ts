@@ -178,6 +178,41 @@ export function calcRMultiple(riskAmount: number, pnl: number): number {
   return pnl / riskAmount;
 }
 
+/**
+ * Direction-aware trade result for a closed trade.
+ * BUY: profit when exit > entry, loss when exit < entry.
+ * SELL: profit when exit < entry, loss when exit > entry.
+ */
+export function getClosedTradeResult(
+  entry: number,
+  exit: number,
+  direction: "buy" | "sell"
+): "win" | "loss" | "breakeven" {
+  if (exit === entry) return "breakeven";
+  if (direction === "buy") {
+    return exit > entry ? "win" : "loss";
+  }
+  return exit < entry ? "win" : "loss";
+}
+
+/**
+ * Realized PnL and R for a closed trade (direction-aware).
+ */
+export function calcClosedTradePnLAndR(
+  entry: number,
+  exit: number,
+  positionSize: number,
+  riskAmount: number,
+  direction: "buy" | "sell",
+  symbol: string,
+  registryMeta?: { pip_multiplier: number }
+): { pnl: number; rMultiple: number; result: "win" | "loss" | "breakeven" } {
+  const pnl = calcTradePnL(entry, exit, positionSize, direction, symbol, registryMeta);
+  const rMultiple = calcRMultiple(riskAmount, pnl);
+  const result = getClosedTradeResult(entry, exit, direction);
+  return { pnl, rMultiple, result };
+}
+
 export function calcChecklistPercent(score: number, total: number): number {
   if (total <= 0) return 0;
   return Math.round((score / total) * 100);
