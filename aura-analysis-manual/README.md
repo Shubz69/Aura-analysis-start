@@ -1,6 +1,8 @@
 # Aura Analysis – FREE Manual Trading Dashboard
 
-Production-ready manual trading dashboard for Aura FX. Uses your existing MySQL + JWT auth; creates separate tables with prefix `aura_analysis_`. **JavaScript only. No Supabase, TypeScript, Tailwind, or Prisma.**
+**Manual-only** dashboard for free members. All trades are entered by the user; no MT5, broker API, TradingView sync, VPS sync, or automatic trade import. Automated/account syncing is reserved for a future paid AI version. See **docs/PRODUCT_SCOPE.md**.
+
+Production-ready: existing MySQL + JWT auth; tables with prefix `aura_analysis_`. **JavaScript only. No Supabase, TypeScript, Tailwind, or Prisma.**
 
 ## Repository alignment
 
@@ -124,6 +126,7 @@ The token is read from the same storage key as the main app (default `token`) (o
 
 ## Project status summary
 
+- **Scope:** Manual-only. No MT5, broker API, TradingView, VPS, or automatic import (see **docs/PRODUCT_SCOPE.md**).
 - **Auth:** JWT via `api/utils/auth.js`; allowed roles `user`, `admin`, `super_admin`; blocked `premium`, `elite`, `a7fx`; `shubzfx@gmail.com` override.
 - **DB:** All tables use `aura_analysis_` prefix; raw MySQL through `api/db.js`; migrations and seeds run in order above.
 - **API:** Vercel serverless under `/api/aura-analysis/` (me, assets, trades, analytics, checklists, admin); no Supabase/Prisma/Express.

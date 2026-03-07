@@ -1,5 +1,7 @@
 # Aura Analysis Free Manual Dashboard — Final Output
 
+**Scope:** Manual-only. No MT5, broker API, TradingView sync, VPS sync, or automatic trade import. See **docs/PRODUCT_SCOPE.md**.
+
 ## 1. Project file tree
 
 ```
@@ -35,6 +37,7 @@ aura-analysis-manual/
 ├── docs/
 │   ├── ARCHITECTURE_SUMMARY.md
 │   ├── AUTH_AND_TESTING.md             # Existing auth only; how to test
+│   ├── PRODUCT_SCOPE.md                # Manual-only; no MT5/broker/sync/auto-import
 │   ├── REPOSITORY_SCAN.md
 │   └── FINAL_OUTPUT.md                 # This file
 ├── src/
