@@ -91,14 +91,14 @@ export function OverviewClient({
           <BarChart3 className="h-4 w-4 shrink-0" />
           <span>Showing sample data. Add trades to see your real performance.</span>
           <Button asChild size="sm" className="ml-auto shrink-0">
-            <Link href="/dashboard/calculator">Add trade</Link>
+            <Link href="/aura-analysis/calculator">Add trade</Link>
           </Button>
         </div>
       )}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Overview</h1>
         <Button asChild className="w-full sm:w-auto">
-          <Link href="/dashboard/calculator">
+          <Link href="/aura-analysis/calculator">
             <Plus className="mr-2 h-4 w-4" />
             Quick add trade
           </Link>
@@ -164,7 +164,7 @@ export function OverviewClient({
         <Card className="glass overflow-hidden">
           <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-2">
             <CardTitle className="text-lg">Recent Trades</CardTitle>
-            <Link href="/dashboard/journal" className="shrink-0">
+            <Link href="/aura-analysis/journal" className="shrink-0">
               <Button variant="ghost" size="sm">View all</Button>
             </Link>
           </CardHeader>
@@ -173,7 +173,7 @@ export function OverviewClient({
               <div className="flex flex-col items-center justify-center py-10 text-center">
                 <p className="text-sm text-muted-foreground">No trades yet.</p>
                 <Button asChild variant="outline" size="sm" className="mt-3">
-                  <Link href="/dashboard/calculator">Add your first trade</Link>
+                  <Link href="/aura-analysis/calculator">Add your first trade</Link>
                 </Button>
               </div>
             ) : (
@@ -193,7 +193,7 @@ export function OverviewClient({
                       <TableRow
                         key={t.id}
                         className="cursor-pointer"
-                        onClick={() => !t.id.startsWith("demo") && router.push(`/dashboard/journal?trade=${t.id}`)}
+                        onClick={() => !t.id.startsWith("demo") && router.push(`/aura-analysis/journal?trade=${t.id}`)}
                       >
                         <TableCell className="text-muted-foreground text-xs sm:text-sm">
                           {new Date(t.created_at).toLocaleDateString()}

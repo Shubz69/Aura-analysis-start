@@ -102,7 +102,7 @@ export function TradeDetailSheet({
             )}
             <div className="flex gap-2 pt-4 border-t border-border">
               <Button variant="outline" size="sm" asChild>
-                <a href={`/dashboard/journal/${tradeId}/edit`}>
+                <a href={`/aura-analysis/journal/${tradeId}/edit`}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Edit
                 </a>

@@ -7,8 +7,9 @@ import { DashboardNav } from "./DashboardNav";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { LogOut, Menu } from "lucide-react";
 
+import { getMainLoginUrl, DASHBOARD_ROUTE } from "@/lib/appConfig";
+
 const AUTH_TOKEN_KEY = process.env.NEXT_PUBLIC_AUTH_TOKEN_KEY || "token";
-const MAIN_LOGIN_URL = process.env.NEXT_PUBLIC_MAIN_LOGIN_URL || "/";
 
 export function DashboardShell({
   children,
@@ -24,7 +25,9 @@ export function DashboardShell({
       localStorage.removeItem(AUTH_TOKEN_KEY);
       sessionStorage.removeItem(AUTH_TOKEN_KEY);
     }
-    window.location.href = MAIN_LOGIN_URL;
+    window.location.href = getMainLoginUrl(
+      typeof window !== "undefined" ? `${window.location.origin}${DASHBOARD_ROUTE}` : undefined
+    );
   }
 
   const navContent = (
@@ -48,7 +51,7 @@ export function DashboardShell({
     <div className="flex min-h-screen">
       <aside className="hidden md:flex w-64 flex-col border-r border-border bg-card/50 shrink-0">
         <div className="flex h-14 shrink-0 items-center border-b border-border px-6">
-          <Link href="/dashboard" className="font-semibold">
+          <Link href={DASHBOARD_ROUTE} className="font-semibold">
             Aura Analysis
           </Link>
         </div>
@@ -68,7 +71,7 @@ export function DashboardShell({
             {navContent}
           </SheetContent>
         </Sheet>
-        <Link href="/dashboard" className="ml-2 font-semibold">
+        <Link href={DASHBOARD_ROUTE} className="ml-2 font-semibold">
           Aura Analysis
         </Link>
       </div>

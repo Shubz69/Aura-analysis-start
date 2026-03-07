@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
-
-const MAIN_LOGIN_URL = process.env.NEXT_PUBLIC_MAIN_LOGIN_URL || "/";
+import { getMainLoginUrl, getAppOrigin, DASHBOARD_ROUTE } from "@/lib/appConfig";
 
 export default function LoginPage() {
-  redirect(MAIN_LOGIN_URL);
+  const returnUrl = getAppOrigin() ? `${getAppOrigin()}${DASHBOARD_ROUTE}` : undefined;
+  redirect(getMainLoginUrl(returnUrl));
 }

@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-
-const MAIN_LOGIN_URL = process.env.NEXT_PUBLIC_MAIN_LOGIN_URL || "/";
+import { getAppOrigin, DASHBOARD_ROUTE } from "@/lib/appConfig";
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const next = url.searchParams.get("next") ?? "/dashboard";
-  // Uses existing Aura FX JWT only. Redirect to dashboard on this app's origin.
+  const next = url.searchParams.get("next") ?? DASHBOARD_ROUTE;
   const origin = url.origin;
-  const redirectUrl = origin ? `${origin}${next}` : MAIN_LOGIN_URL;
+  const fallback = getAppOrigin() ? `${getAppOrigin()}${next}` : "/";
+  const redirectUrl = origin ? `${origin}${next}` : fallback;
   return NextResponse.redirect(redirectUrl);
 }

@@ -74,14 +74,14 @@ export function JournalClient({ initialTrades, openTradeId }: JournalClientProps
     setSelectedTradeId(id);
     const next = new URLSearchParams(searchParams);
     next.set("trade", id);
-    router.push(`/dashboard/journal?${next.toString()}`, { scroll: false });
+    router.push(`/aura-analysis/journal?${next.toString()}`, { scroll: false });
   }
 
   function closeTrade() {
     setSelectedTradeId(null);
     const next = new URLSearchParams(searchParams);
     next.delete("trade");
-    router.push(`/dashboard/journal?${next.toString()}`, { scroll: false });
+    router.push(`/aura-analysis/journal?${next.toString()}`, { scroll: false });
   }
 
   return (

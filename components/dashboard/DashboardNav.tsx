@@ -15,14 +15,14 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/dashboard/calculator", label: "Trade Calculator", icon: Calculator },
-  { href: "/dashboard/journal", label: "Trade Journal", icon: BookOpen },
-  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/dashboard/leaderboard", label: "Leaderboard", icon: Trophy },
-  { href: "/dashboard/checklists", label: "Checklist Templates", icon: ListChecks },
-  { href: "/dashboard/profile", label: "Profile", icon: User },
-  { href: "/dashboard/admin", label: "Admin", icon: Shield },
+  { href: "/aura-analysis", label: "Overview", icon: LayoutDashboard },
+  { href: "/aura-analysis/calculator", label: "Trade Calculator", icon: Calculator },
+  { href: "/aura-analysis/journal", label: "Trade Journal", icon: BookOpen },
+  { href: "/aura-analysis/analytics", label: "Analytics", icon: BarChart3 },
+  { href: "/aura-analysis/leaderboard", label: "Leaderboard", icon: Trophy },
+  { href: "/aura-analysis/checklists", label: "Checklist Templates", icon: ListChecks },
+  { href: "/aura-analysis/profile", label: "Profile", icon: User },
+  { href: "/aura-analysis/admin", label: "Admin", icon: Shield },
 ];
 
 export function DashboardNav({ onNavigate }: { onNavigate?: () => void }) {
@@ -31,7 +31,7 @@ export function DashboardNav({ onNavigate }: { onNavigate?: () => void }) {
     <nav className="flex flex-col gap-1" aria-label="Dashboard navigation">
       {navItems.map((item) => {
         const Icon = item.icon;
-        const isActive = pathname === item.href || (item.href !== "/dashboard" && pathname.startsWith(item.href));
+        const isActive = pathname === item.href || (item.href !== "/aura-analysis" && pathname.startsWith(item.href));
         return (
           <Link
             key={item.href}

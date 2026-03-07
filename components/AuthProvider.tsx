@@ -1,15 +1,10 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { getMainLoginUrl, DASHBOARD_ROUTE } from "@/lib/appConfig";
 
 const AUTH_TOKEN_KEY = process.env.NEXT_PUBLIC_AUTH_TOKEN_KEY || "token";
-const DEFAULT_MAIN_LOGIN_URL = "https://aura-fx.com/login";
-const MAIN_LOGIN_URL =
-  process.env.NEXT_PUBLIC_MAIN_LOGIN_URL?.trim() &&
-  process.env.NEXT_PUBLIC_MAIN_LOGIN_URL !== "/"
-    ? process.env.NEXT_PUBLIC_MAIN_LOGIN_URL.trim()
-    : DEFAULT_MAIN_LOGIN_URL;
 
 type User = {
   id: number;
@@ -37,7 +32,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [allowed, setAllowed] = useState(false);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
   const pathname = usePathname();
 
   const refreshAuth = useCallback(async () => {
@@ -77,7 +71,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (loading) return;
     const token = getToken();
     if (!token || !allowed) {
-      window.location.href = MAIN_LOGIN_URL;
+      const returnUrl =
+        typeof window !== "undefined" ? `${window.location.origin}${DASHBOARD_ROUTE}` : undefined;
+      window.location.href = getMainLoginUrl(returnUrl);
     }
   }, [loading, allowed, pathname]);
 

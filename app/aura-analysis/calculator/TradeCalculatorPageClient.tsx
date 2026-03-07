@@ -28,7 +28,7 @@ export function TradeCalculatorPageClient({
     setSaving(true);
     // Trade persistence will use existing Aura FX API when available.
     setSaving(false);
-    router.push("/dashboard/journal");
+    router.push("/aura-analysis/journal");
     router.refresh();
   }
 
