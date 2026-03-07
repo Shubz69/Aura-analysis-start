@@ -3,6 +3,10 @@
  * Main site: auraxfx.com. Dashboard lives at /aura-analysis in this app.
  */
 
+/** When true, skip login/redirect and open dashboard directly with mock user (temporary testing only). */
+export const BYPASS_AUTH =
+  typeof process !== "undefined" && process.env?.NEXT_PUBLIC_BYPASS_AUTH === "true";
+
 export const MAIN_SITE_URL = "https://auraxfx.com";
 export const DASHBOARD_ROUTE = "/aura-analysis";
 

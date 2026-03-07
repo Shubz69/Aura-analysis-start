@@ -1,33 +1,34 @@
 import * as metrics from "@/lib/analytics";
 import { buildEquityCurve } from "@/lib/analytics/equity";
 import { AnalyticsClient } from "./AnalyticsClient";
-import { DEMO_EQUITY_CURVE, DEMO_PAIR_PNL, DEMO_SESSION_PNL } from "@/lib/demo-data";
+import { DEMO_EQUITY_CURVE, DEMO_PAIR_PNL, DEMO_SESSION_PNL, DEMO_TRADES } from "@/lib/demo-data";
+import { BYPASS_AUTH } from "@/lib/appConfig";
 
-const emptyTrades: never[] = [];
 const startBalance = 10000;
 
 export default async function AnalyticsPage() {
-  const hasData = false;
-  const equityData = hasData ? buildEquityCurve(emptyTrades, startBalance) : DEMO_EQUITY_CURVE;
+  const tradeList = BYPASS_AUTH ? DEMO_TRADES : [];
+  const hasData = tradeList.length > 0;
+  const equityData = hasData ? buildEquityCurve(tradeList, startBalance) : DEMO_EQUITY_CURVE;
   const pairPnLData = hasData
-    ? Object.entries(metrics.pairPnL(emptyTrades)).map(([pair, pnl]) => ({ pair, pnl }))
+    ? Object.entries(metrics.pairPnL(tradeList)).map(([pair, pnl]) => ({ pair, pnl }))
     : DEMO_PAIR_PNL;
   const sessionData = hasData
-    ? Object.entries(metrics.sessionPnL(emptyTrades)).map(([session, pnl]) => ({ session, pnl }))
+    ? Object.entries(metrics.sessionPnL(tradeList)).map(([session, pnl]) => ({ session, pnl }))
     : DEMO_SESSION_PNL;
 
   const stats = {
-    totalTrades: metrics.totalTrades(emptyTrades),
-    winRate: metrics.winRate(emptyTrades),
-    avgR: metrics.averageR(emptyTrades),
-    totalPnL: metrics.totalPnL(emptyTrades),
-    profitFactor: metrics.profitFactor(emptyTrades),
-    expectancy: metrics.expectancy(emptyTrades),
-    maxDrawdown: metrics.maxDrawdown(emptyTrades),
-    maxWinStreak: metrics.longestWinStreak(emptyTrades),
-    maxLossStreak: metrics.longestLossStreak(emptyTrades),
-    avgChecklist: metrics.averageChecklistPercent(emptyTrades),
-    consistency: metrics.consistencyScore(emptyTrades),
+    totalTrades: metrics.totalTrades(tradeList),
+    winRate: metrics.winRate(tradeList),
+    avgR: metrics.averageR(tradeList),
+    totalPnL: metrics.totalPnL(tradeList),
+    profitFactor: metrics.profitFactor(tradeList),
+    expectancy: metrics.expectancy(tradeList),
+    maxDrawdown: metrics.maxDrawdown(tradeList),
+    maxWinStreak: metrics.longestWinStreak(tradeList),
+    maxLossStreak: metrics.longestLossStreak(tradeList),
+    avgChecklist: metrics.averageChecklistPercent(tradeList),
+    consistency: metrics.consistencyScore(tradeList),
   };
 
   return (

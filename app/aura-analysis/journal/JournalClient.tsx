@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { TradeDetailSheet } from "@/components/trades/TradeDetailSheet";
 import { EmptyState } from "@/components/dashboard/EmptyState";
+import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrency, formatNumber } from "@/lib/utils";
 import type { Trade } from "@/types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -39,12 +40,18 @@ export function JournalClient({ initialTrades, openTradeId }: JournalClientProps
   const [filterPair, setFilterPair] = useState<string>("all");
   const [filterResult, setFilterResult] = useState<string>("all");
   const [filterDirection, setFilterDirection] = useState<string>("all");
+  const [filterSession, setFilterSession] = useState<string>("all");
   const [page, setPage] = useState(0);
   const [selectedTradeId, setSelectedTradeId] = useState<string | null>(openTradeId);
 
   const pairs = useMemo(() => {
     const set = new Set(initialTrades.map((t) => t.pair));
     return Array.from(set).sort();
+  }, [initialTrades]);
+
+  const sessions = useMemo(() => {
+    const values = initialTrades.map((t) => t.session).filter((s): s is NonNullable<typeof s> => s != null);
+    return Array.from(new Set(values)).sort();
   }, [initialTrades]);
 
   const filtered = useMemo(() => {
@@ -60,8 +67,9 @@ export function JournalClient({ initialTrades, openTradeId }: JournalClientProps
     if (filterPair !== "all") list = list.filter((t) => t.pair === filterPair);
     if (filterResult !== "all") list = list.filter((t) => t.result === filterResult);
     if (filterDirection !== "all") list = list.filter((t) => t.direction === filterDirection);
+    if (filterSession !== "all") list = list.filter((t) => (t.session ?? "") === filterSession);
     return list;
-  }, [initialTrades, search, filterPair, filterResult, filterDirection]);
+  }, [initialTrades, search, filterPair, filterResult, filterDirection, filterSession]);
 
   const paginated = useMemo(() => {
     const start = page * PAGE_SIZE;
@@ -126,6 +134,17 @@ export function JournalClient({ initialTrades, openTradeId }: JournalClientProps
             <SelectItem value="sell">Sell</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={filterSession} onValueChange={setFilterSession}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="Session" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All sessions</SelectItem>
+            {sessions.map((s) => (
+              <SelectItem key={s} value={s}>{s}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {filtered.length === 0 ? (
@@ -135,7 +154,9 @@ export function JournalClient({ initialTrades, openTradeId }: JournalClientProps
         />
       ) : (
         <>
-          <div className="rounded-md border border-border overflow-hidden">
+          <Card className="glass overflow-hidden">
+            <CardContent className="p-0">
+            <div className="rounded-md overflow-hidden">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -182,7 +203,9 @@ export function JournalClient({ initialTrades, openTradeId }: JournalClientProps
                 ))}
               </TableBody>
             </Table>
-          </div>
+            </div>
+            </CardContent>
+          </Card>
           {totalPages > 1 && (
             <div className="flex items-center justify-between">
               <p className="text-sm text-muted-foreground">
@@ -217,6 +240,7 @@ export function JournalClient({ initialTrades, openTradeId }: JournalClientProps
           open={!!selectedTradeId}
           onClose={closeTrade}
           onDeleted={closeTrade}
+          initialTrade={initialTrades.find((t) => t.id === selectedTradeId) ?? undefined}
         />
       )}
     </div>

@@ -17,11 +17,13 @@ import {
   DEMO_PAIR_PNL,
   DEMO_SESSION_PNL,
   DEMO_RECENT_TRADES,
+  DEMO_TRADES,
 } from "@/lib/demo-data";
+import { BYPASS_AUTH } from "@/lib/appConfig";
 
 export default async function DashboardOverviewPage() {
-  const tradeList: never[] = [];
-  const hasData = false;
+  const tradeList = BYPASS_AUTH ? DEMO_TRADES : [];
+  const hasData = tradeList.length > 0;
   const startBalance = 10000;
 
   const equityData = hasData

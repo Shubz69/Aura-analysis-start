@@ -2,9 +2,17 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
-import { getMainLoginUrl, DASHBOARD_ROUTE } from "@/lib/appConfig";
+import { getMainLoginUrl, DASHBOARD_ROUTE, BYPASS_AUTH } from "@/lib/appConfig";
 
 const AUTH_TOKEN_KEY = process.env.NEXT_PUBLIC_AUTH_TOKEN_KEY || "token";
+
+const MOCK_USER = {
+  id: 1,
+  email: "shubzfx@gmail.com",
+  username: "Shubz",
+  role: "super_admin",
+  effectiveRole: "super_admin",
+};
 
 type User = {
   id: number;
@@ -35,6 +43,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   const refreshAuth = useCallback(async () => {
+    if (BYPASS_AUTH) {
+      setUser(MOCK_USER);
+      setAllowed(true);
+      setLoading(false);
+      return;
+    }
     const token = getToken();
     if (!token) {
       setUser(null);
@@ -68,6 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [refreshAuth]);
 
   useEffect(() => {
+    if (BYPASS_AUTH) return;
     if (loading) return;
     const token = getToken();
     if (!token || !allowed) {

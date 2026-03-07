@@ -17,6 +17,8 @@ interface TradeDetailSheetProps {
   open: boolean;
   onClose: () => void;
   onDeleted?: () => void;
+  /** When provided (e.g. test mode or client already has trade), no fetch is made. */
+  initialTrade?: Trade | null;
 }
 
 export function TradeDetailSheet({
@@ -24,19 +26,25 @@ export function TradeDetailSheet({
   open,
   onClose,
   onDeleted,
+  initialTrade,
 }: TradeDetailSheetProps) {
-  const [trade, setTrade] = useState<Trade | null>(null);
+  const [trade, setTrade] = useState<Trade | null>(initialTrade ?? null);
   const [checklistItems, setChecklistItems] = useState<TradeChecklistItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialTrade);
 
   useEffect(() => {
     if (!open || !tradeId) return;
+    if (initialTrade && initialTrade.id === tradeId) {
+      setTrade(initialTrade);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setTrade(null);
     setChecklistItems([]);
     // Trade and checklist data will come from existing API when available.
     setLoading(false);
-  }, [open, tradeId]);
+  }, [open, tradeId, initialTrade]);
 
   async function handleDelete() {
     if (!tradeId || (typeof window !== "undefined" && !window.confirm("Delete this trade?"))) return;
