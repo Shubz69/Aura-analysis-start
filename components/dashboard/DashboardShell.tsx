@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { DashboardNav } from "./DashboardNav";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { LogOut, Menu } from "lucide-react";
-
-import { getMainLoginUrl, DASHBOARD_ROUTE } from "@/lib/appConfig";
+import { DASHBOARD_ROUTE } from "@/lib/appConfig";
 
 const AUTH_TOKEN_KEY = process.env.NEXT_PUBLIC_AUTH_TOKEN_KEY || "token";
 
@@ -19,15 +19,14 @@ export function DashboardShell({
   userEmail?: string | null;
 }) {
   const [sheetOpen, setSheetOpen] = useState(false);
+  const router = useRouter();
 
   function signOut() {
     if (typeof window !== "undefined") {
       localStorage.removeItem(AUTH_TOKEN_KEY);
       sessionStorage.removeItem(AUTH_TOKEN_KEY);
     }
-    window.location.href = getMainLoginUrl(
-      typeof window !== "undefined" ? `${window.location.origin}${DASHBOARD_ROUTE}` : undefined
-    );
+    router.push(DASHBOARD_ROUTE);
   }
 
   const navContent = (
