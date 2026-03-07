@@ -36,7 +36,7 @@ function createMockClient() {
       on: () => ({ subscribe: () => ({ unsubscribe: () => {} }) }),
     }),
     removeChannel: () => {},
-  } as ReturnType<typeof createBrowserClient>;
+  } as unknown as ReturnType<typeof createBrowserClient>;
 }
 
 export function createClient() {
