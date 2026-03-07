@@ -1,9 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { AdminClient } from "./AdminClient";
+import { ConfigRequired } from "@/components/ConfigRequired";
 
 export default async function AdminPage() {
   const supabase = await createClient();
+  if (!supabase) return <ConfigRequired />;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 

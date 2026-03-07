@@ -1,9 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { TradeCalculatorPageClient } from "./TradeCalculatorPageClient";
+import { ConfigRequired } from "@/components/ConfigRequired";
 
 export default async function TradeCalculatorPage() {
   const supabase = await createClient();
+  if (!supabase) return <ConfigRequired />;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 

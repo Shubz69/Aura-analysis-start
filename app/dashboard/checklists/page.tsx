@@ -1,9 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ChecklistTemplatesClient } from "./ChecklistTemplatesClient";
+import { ConfigRequired } from "@/components/ConfigRequired";
 
 export default async function ChecklistTemplatesPage() {
   const supabase = await createClient();
+  if (!supabase) return <ConfigRequired />;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 

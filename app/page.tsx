@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 
 export default async function HomePage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (user) redirect("/dashboard");
+  if (supabase) {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) redirect("/dashboard");
+  }
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4">
       <div className="text-center space-y-6 max-w-md">

@@ -3,10 +3,12 @@ import { redirect } from "next/navigation";
 import * as metrics from "@/lib/analytics";
 import { buildEquityCurve } from "@/lib/analytics/equity";
 import { AnalyticsClient } from "./AnalyticsClient";
+import { ConfigRequired } from "@/components/ConfigRequired";
 import { DEMO_EQUITY_CURVE, DEMO_PAIR_PNL, DEMO_SESSION_PNL } from "@/lib/demo-data";
 
 export default async function AnalyticsPage() {
   const supabase = await createClient();
+  if (!supabase) return <ConfigRequired />;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 

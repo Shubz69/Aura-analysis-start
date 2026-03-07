@@ -15,6 +15,7 @@ import {
 import { buildEquityCurve } from "@/lib/analytics/equity";
 import { OverviewClient } from "./OverviewClient";
 import { formatCurrency, formatPercent } from "@/lib/utils";
+import { ConfigRequired } from "@/components/ConfigRequired";
 import {
   DEMO_EQUITY_CURVE,
   DEMO_PAIR_PNL,
@@ -24,6 +25,7 @@ import {
 
 export default async function DashboardOverviewPage() {
   const supabase = await createClient();
+  if (!supabase) return <ConfigRequired />;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
