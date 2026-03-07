@@ -1,0 +1,6 @@
+{
+  "root": true,
+  "extends": ["next/core-web-vitals"],
+  "env": { "browser": true, "es2022": true },
+  "globals": { "React": "readonly" }
+}
