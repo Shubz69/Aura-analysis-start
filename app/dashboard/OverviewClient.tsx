@@ -18,6 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, BarChart3, AlertCircle } from "lucide-react";
+import { formatCurrency, formatPercent } from "@/lib/utils";
 
 interface OverviewClientProps {
   kpis: {
@@ -41,8 +42,6 @@ interface OverviewClientProps {
   }>;
   pairData: { pair: string; pnl: number }[];
   sessionData: { session: string; pnl: number }[];
-  formatCurrency: (v: number) => string;
-  formatPercent: (v: number) => string;
   isDemo?: boolean;
   error?: string | null;
 }
@@ -56,8 +55,6 @@ export function OverviewClient({
   recentTrades,
   pairData,
   sessionData,
-  formatCurrency,
-  formatPercent,
   isDemo = false,
   error,
 }: OverviewClientProps) {

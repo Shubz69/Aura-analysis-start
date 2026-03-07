@@ -72,7 +72,7 @@ export function AdminClient({ users, tradesCount, assets }: AdminClientProps) {
         <Card className="glass">
           <CardHeader>
             <CardTitle>Asset registry</CardTitle>
-            <CardDescription>Active instruments. Edit in Supabase or via API.</CardDescription>
+            <CardDescription>Active instruments. Edit via main app or API.</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>

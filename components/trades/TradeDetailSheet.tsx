@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import {
   Sheet,
   SheetContent,
@@ -33,30 +32,14 @@ export function TradeDetailSheet({
   useEffect(() => {
     if (!open || !tradeId) return;
     setLoading(true);
-    const supabase = createClient();
-    supabase
-      .from("trades")
-      .select("*")
-      .eq("id", tradeId)
-      .single()
-      .then(({ data }) => {
-        setTrade(data as Trade | null);
-      });
-
-    supabase
-      .from("trade_checklist_items")
-      .select("*")
-      .eq("trade_id", tradeId)
-      .then(({ data }) => {
-        setChecklistItems((data as TradeChecklistItem[]) ?? []);
-        setLoading(false);
-      });
+    setTrade(null);
+    setChecklistItems([]);
+    // Trade and checklist data will come from existing API when available.
+    setLoading(false);
   }, [open, tradeId]);
 
   async function handleDelete() {
     if (!tradeId || (typeof window !== "undefined" && !window.confirm("Delete this trade?"))) return;
-    const supabase = createClient();
-    await supabase.from("trades").delete().eq("id", tradeId);
     onDeleted?.();
     onClose();
   }

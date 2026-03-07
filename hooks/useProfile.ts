@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import type { Profile } from "@/types";
+
+const AUTH_TOKEN_KEY = process.env.NEXT_PUBLIC_AUTH_TOKEN_KEY || "token";
 
 export function useProfile(userId: string | undefined) {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -14,32 +15,25 @@ export function useProfile(userId: string | undefined) {
       setLoading(false);
       return;
     }
-    const supabase = createClient();
-    supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single()
-      .then(({ data, error }) => {
-        if (!error) setProfile(data as Profile);
-        setLoading(false);
-      });
-
-    const channel = supabase
-      .channel("profile-changes")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "profiles", filter: `id=eq.${userId}` },
-        () => {
-          supabase.from("profiles").select("*").eq("id", userId).single().then(({ data }) => {
-            if (data) setProfile(data as Profile);
-          });
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem(AUTH_TOKEN_KEY) || sessionStorage.getItem(AUTH_TOKEN_KEY)
+        : null;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+    fetch("/api/aura-analysis/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.success && data?.user) {
+          setProfile(data.user as Profile);
         }
-      )
-      .subscribe();
-    return () => {
-      supabase.removeChannel(channel);
-    };
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, [userId]);
 
   return { profile, loading };

@@ -1,18 +1,12 @@
-import { createClient } from "@/lib/supabase/server";
 import { NextResponse } from "next/server";
 
+const MAIN_LOGIN_URL = process.env.NEXT_PUBLIC_MAIN_LOGIN_URL || "/";
+
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
-  if (code) {
-    const supabase = await createClient();
-    if (supabase) {
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-        return NextResponse.redirect(`${origin}${next}`);
-      }
-    }
-  }
-  return NextResponse.redirect(`${origin}/login?error=auth`);
+  const url = new URL(request.url);
+  const next = url.searchParams.get("next") ?? "/dashboard";
+  // Uses existing Aura FX JWT only. Redirect to dashboard on this app's origin.
+  const origin = url.origin;
+  const redirectUrl = origin ? `${origin}${next}` : MAIN_LOGIN_URL;
+  return NextResponse.redirect(redirectUrl);
 }

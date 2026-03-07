@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { DashboardNav } from "./DashboardNav";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { LogOut, Menu } from "lucide-react";
+
+const AUTH_TOKEN_KEY = process.env.NEXT_PUBLIC_AUTH_TOKEN_KEY || "token";
+const MAIN_LOGIN_URL = process.env.NEXT_PUBLIC_MAIN_LOGIN_URL || "/";
 
 export function DashboardShell({
   children,
@@ -16,14 +17,14 @@ export function DashboardShell({
   children: React.ReactNode;
   userEmail?: string | null;
 }) {
-  const router = useRouter();
   const [sheetOpen, setSheetOpen] = useState(false);
 
-  async function signOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/");
-    router.refresh();
+  function signOut() {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(AUTH_TOKEN_KEY);
+      sessionStorage.removeItem(AUTH_TOKEN_KEY);
+    }
+    window.location.href = MAIN_LOGIN_URL;
   }
 
   const navContent = (

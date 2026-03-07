@@ -1,5 +1,3 @@
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 import {
   totalTrades,
   winRate,
@@ -14,8 +12,6 @@ import {
 } from "@/lib/analytics";
 import { buildEquityCurve } from "@/lib/analytics/equity";
 import { OverviewClient } from "./OverviewClient";
-import { formatCurrency, formatPercent } from "@/lib/utils";
-import { ConfigRequired } from "@/components/ConfigRequired";
 import {
   DEMO_EQUITY_CURVE,
   DEMO_PAIR_PNL,
@@ -24,21 +20,9 @@ import {
 } from "@/lib/demo-data";
 
 export default async function DashboardOverviewPage() {
-  const supabase = await createClient();
-  if (!supabase) return <ConfigRequired />;
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-  const { data: trades, error } = await supabase
-    .from("trades")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
-
-  const startBalance = profile?.default_account_balance ?? 10000;
-  const tradeList = trades ?? [];
-  const hasData = tradeList.length > 0;
+  const tradeList: never[] = [];
+  const hasData = false;
+  const startBalance = 10000;
 
   const equityData = hasData
     ? buildEquityCurve(tradeList, startBalance)
@@ -69,10 +53,8 @@ export default async function DashboardOverviewPage() {
       recentTrades={recentTrades}
       pairData={pairData}
       sessionData={sessionData}
-      formatCurrency={formatCurrency}
-      formatPercent={formatPercent}
       isDemo={!hasData}
-      error={error?.message}
+      error={null}
     />
   );
 }

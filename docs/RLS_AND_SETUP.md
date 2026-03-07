@@ -1,39 +1,25 @@
-# RLS and manual setup
+# Auth and setup (Aura FX only)
 
-## Row Level Security (RLS) — what’s in the migration
+This app **does not use Supabase**. It uses the existing **Aura FX** login and database.
 
-The migration `20240307000002_rls.sql` enables RLS on all public tables and creates:
+## Auth flow
 
-- **Helpers:** `public.is_admin()` and `public.is_super_admin()` (security definer, read `profiles` for `auth.uid()`).
-- **profiles:** Users read own or (if admin) any; users update own; only super_admin can insert (trigger normally creates profiles).
-- **assets:** Authenticated read; only admin/super_admin can insert/update/delete.
-- **trades:** Users read/insert/update/delete own; admins have full access via a separate “all” policy.
-- **checklist_templates:** Authenticated read active or own or (if admin) all; only admin/super_admin can modify.
-- **checklist_template_items:** Read if template is visible; only admin/super_admin can modify.
-- **trade_checklist_items:** Read/insert/update/delete only for the user who owns the trade (or admin).
-- **app_settings:** Authenticated read; only admin/super_admin can modify.
+- Users sign in on the **main Aura FX website**. This app reads the same JWT from storage (`NEXT_PUBLIC_AUTH_TOKEN_KEY`, default `"token"`).
+- The app calls `GET /api/aura-analysis/me` with `Authorization: Bearer <token>`. The API validates the token and loads the user from the existing **users** table (MySQL).
+- Allowed roles: `user`, `admin`, `super_admin`. Blocked: `premium`, `elite`, `a7fx`. The email `shubzfx@gmail.com` is always treated as `super_admin`.
 
-## Manual policy steps (if you change schema or Supabase resets RLS)
+## Environment
 
-1. **Enable RLS** on each table:  
-   `ALTER TABLE public.<table> ENABLE ROW LEVEL SECURITY;`
+See `.env.example`. Required:
 
-2. **Recreate helpers** (run the `create or replace function` blocks for `is_admin` and `is_super_admin` from the migration).
+- **JWT:** `JWT_SECRET` or `JWT_SIGNING_KEY` (same as main site).
+- **Database:** `DATABASE_URL` or `MYSQL_*` (same MySQL as main Aura FX).
 
-3. **Recreate policies** in this order (to avoid dependency issues):
-   - profiles (select, update for own; update for admin; insert for super_admin)
-   - assets (select for authenticated; all for admin)
-   - trades (select/insert/update/delete own; all for admin)
-   - checklist_templates (select; all for admin)
-   - checklist_template_items (select; all for admin)
-   - trade_checklist_items (select/insert/update/delete via trade ownership)
-   - app_settings (select; all for admin)
+Optional:
 
-4. **New tables:** If you add a new table that should respect roles, add an RLS policy that uses `auth.uid()` and/or `public.is_admin()` / `public.is_super_admin()` as in the migration.
+- `NEXT_PUBLIC_MAIN_LOGIN_URL` — where to redirect unauthenticated users (main site login).
+- `NEXT_PUBLIC_AUTH_TOKEN_KEY` — storage key for the token (must match main site).
 
-## First admin user
+## User and role management
 
-- Sign up a user through the app (Auth → Email).
-- In Supabase: **Table Editor → profiles** → find the row where `id` = that user’s UUID → set `role` to `admin` or `super_admin`.
-
-No extra SQL is required for the first admin if the trigger and RLS are already applied.
+Users and roles are managed in the **main Aura FX app** and its database. There is no separate signup or RLS in this app. For details on the auth fix and file list, see **`docs/AUTH_FIX_SUMMARY.md`**.
