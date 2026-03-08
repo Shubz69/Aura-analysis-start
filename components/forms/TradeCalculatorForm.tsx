@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { tradeCalculatorSchema, type TradeCalculatorForm as TradeCalculatorFormValues } from "@/lib/validations/trade";
@@ -27,16 +27,8 @@ import {
 import { formatCurrencySafe, formatRR, formatDistance, formatPositionSize, getPositionSizeKind } from "@/lib/utils";
 import { getAssetMetadata, ASSET_CLASS_ORDER, ASSET_CLASS_LABELS } from "@/lib/config/auraAnalysisAssets";
 import { getEntryPlaceholder, getStopPlaceholder, getTpPlaceholder } from "@/lib/config/assetExamples";
-import {
-  DEFAULT_CHECKLIST_ITEMS,
-  CHECKLIST_TOTAL,
-  calcChecklistPercent,
-  checklistPercentToGrade,
-} from "@/lib/config/checklistDefault";
 import { PairSelect } from "@/components/calculator/PairSelect";
-import { ChecklistSection } from "@/components/calculator/ChecklistSection";
 import type { Asset } from "@/types";
-import { AlertTriangle } from "lucide-react";
 
 interface TradeCalculatorFormProps {
   assets: Asset[];
@@ -69,6 +61,14 @@ export interface ComputedValues {
   tradeGrade: string;
 }
 
+const NO_CHECKLIST_PAYLOAD: ChecklistSavePayload = {
+  checklistScore: 0,
+  checklistTotal: 0,
+  checklistPercent: 0,
+  tradeGrade: "—",
+  checklistItems: [],
+};
+
 const MIN_CHECKLIST_WARNING_PERCENT = 60;
 
 export function TradeCalculatorForm({
@@ -79,9 +79,6 @@ export function TradeCalculatorForm({
   saving = false,
 }: TradeCalculatorFormProps) {
   const [direction, setDirection] = useState<"buy" | "sell">("buy");
-  const [checklistChecked, setChecklistChecked] = useState<Set<string>>(new Set());
-  const [showLowChecklistWarning, setShowLowChecklistWarning] = useState(false);
-  const forceSaveRef = useRef(false);
   const form = useForm<TradeCalculatorFormValues>({
     resolver: zodResolver(tradeCalculatorSchema),
     defaultValues: {
@@ -168,9 +165,6 @@ export function TradeCalculatorForm({
     const potentialProfit = calcPotentialProfit(entry, tp, positionSize, pair, registryMeta);
     const potentialLoss = calcPotentialLoss(entry, stop, positionSize, pair, registryMeta);
     const rMultiple = riskAmount > 0 ? potentialProfit / riskAmount : 0;
-    const checklistScore = checklistChecked.size;
-    const checklistPercent = calcChecklistPercent(checklistScore, CHECKLIST_TOTAL);
-    const tradeGrade = checklistPercentToGrade(checklistPercent);
     return {
       riskAmount,
       stopLossPips,
@@ -180,73 +174,24 @@ export function TradeCalculatorForm({
       potentialProfit,
       potentialLoss,
       rMultiple,
-      checklistScore,
-      checklistTotal: CHECKLIST_TOTAL,
-      checklistPercent,
-      tradeGrade,
+      checklistScore: 0,
+      checklistTotal: 0,
+      checklistPercent: 0,
+      tradeGrade: "—",
     };
-  }, [entry, stop, tp, balance, riskPercent, pair, registryMeta, checklistChecked.size]);
+  }, [entry, stop, tp, balance, riskPercent, pair, registryMeta]);
 
   useEffect(() => {
     form.setValue("direction", direction);
   }, [direction, form]);
 
-  function toggleChecklist(id: string) {
-    setChecklistChecked((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
-
   function onSubmit(values: TradeCalculatorFormValues) {
     if (!computed) return;
-    const checklistPercent = calcChecklistPercent(checklistChecked.size, CHECKLIST_TOTAL);
-    if (!forceSaveRef.current && checklistPercent < MIN_CHECKLIST_WARNING_PERCENT) {
-      setShowLowChecklistWarning(true);
-      return;
-    }
-    forceSaveRef.current = false;
-    const checklist: ChecklistSavePayload = {
-      checklistScore: checklistChecked.size,
-      checklistTotal: CHECKLIST_TOTAL,
-      checklistPercent,
-      tradeGrade: checklistPercentToGrade(checklistPercent),
-      checklistItems: DEFAULT_CHECKLIST_ITEMS.map((item) => ({
-        id: item.id,
-        label: item.label,
-        passed: checklistChecked.has(item.id),
-      })),
-    };
-    onSave?.({ ...values, computed, checklist });
-  }
-
-  function handleSaveAnyway() {
-    setShowLowChecklistWarning(false);
-    forceSaveRef.current = true;
-    form.handleSubmit(onSubmit)();
+    onSave?.({ ...values, computed, checklist: NO_CHECKLIST_PAYLOAD });
   }
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-      {showLowChecklistWarning && (
-        <div className="flex items-start gap-2 rounded-lg border border-amber-500/50 bg-amber-500/10 px-4 py-3 text-sm">
-          <AlertTriangle className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
-          <div className="flex-1">
-            <p className="font-medium text-amber-800 dark:text-amber-200">Low checklist score</p>
-            <p className="mt-0.5 text-muted-foreground">Your confluence checklist is below 60%. Consider completing more items before saving, or save anyway if you have a valid reason.</p>
-            <div className="mt-2 flex gap-2">
-              <Button type="button" variant="outline" size="sm" onClick={() => setShowLowChecklistWarning(false)}>
-                Go back
-              </Button>
-              <Button type="button" size="sm" onClick={handleSaveAnyway}>
-                Save anyway
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="glass">
           <CardHeader>
@@ -395,17 +340,7 @@ export function TradeCalculatorForm({
             {!pair ? (
               <p className="text-muted-foreground">Select a pair to see instrument-specific labels and calculations.</p>
             ) : !computed ? (
-              <>
-                <p className="text-muted-foreground">Enter entry, stop loss, and take profit to see risk, position size, and P/L.</p>
-                {pair && (
-                  <div className="border-t border-border pt-3 mt-3">
-                    <p className="text-xs font-medium text-muted-foreground mb-2">Checklist (updates live)</p>
-                    <Row label="Checklist score" value={`${checklistChecked.size} / ${CHECKLIST_TOTAL}`} />
-                    <Row label="Checklist percent" value={`${calcChecklistPercent(checklistChecked.size, CHECKLIST_TOTAL)}%`} />
-                    <Row label="Trade grade" value={checklistPercentToGrade(calcChecklistPercent(checklistChecked.size, CHECKLIST_TOTAL))} />
-                  </div>
-                )}
-              </>
+              <p className="text-muted-foreground">Enter entry, stop loss, and take profit to see risk, position size, and P/L.</p>
             ) : (
               <>
                 <Row label="Risk amount" value={formatCurrencySafe(computed.riskAmount)} />
@@ -416,22 +351,11 @@ export function TradeCalculatorForm({
                 <Row label="Potential profit" value={formatCurrencySafe(computed.potentialProfit)} className="text-emerald-500" />
                 <Row label="Potential loss" value={formatCurrencySafe(computed.potentialLoss)} className="text-red-500" />
                 <Row label="R multiple (if TP hit)" value={formatRR(computed.rMultiple)} />
-                <div className="border-t border-border pt-3 mt-3">
-                  <Row label="Checklist score" value={`${computed.checklistScore} / ${computed.checklistTotal}`} />
-                  <Row label="Checklist percent" value={`${computed.checklistPercent}%`} />
-                  <Row label="Trade grade" value={computed.tradeGrade} />
-                </div>
               </>
             )}
           </CardContent>
         </Card>
       </div>
-
-      <ChecklistSection
-        items={DEFAULT_CHECKLIST_ITEMS}
-        checked={checklistChecked}
-        onToggle={toggleChecklist}
-      />
 
       {onSave && (
         <div className="pt-2">

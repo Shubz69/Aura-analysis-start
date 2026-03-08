@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { ChecklistCard } from "./ChecklistCard";
 import { ProgressBar } from "./ProgressBar";
@@ -41,7 +42,10 @@ function saveChecked(checked: Set<string>) {
   }
 }
 
+const SCORE_REDIRECT_THRESHOLD = 70;
+
 export function TradeValidator() {
+  const router = useRouter();
   const [checked, setChecked] = useState<Set<string>>(loadChecked);
 
   const pointsByItemId = useMemo(() => getPointsByItemId(), []);
@@ -52,6 +56,12 @@ export function TradeValidator() {
   );
   const label = useMemo(() => getScoreLabel(totalScore), [totalScore]);
   const clampedScore = clampPercent(totalScore);
+
+  useEffect(() => {
+    if (totalScore >= SCORE_REDIRECT_THRESHOLD) {
+      router.push("/aura-analysis/calculator");
+    }
+  }, [totalScore, router]);
 
   const handleToggle = (id: string) => {
     setChecked((prev) => {
