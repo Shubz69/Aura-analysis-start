@@ -11,11 +11,13 @@ import {
   Trophy,
   User,
   Shield,
+  ClipboardCheck,
 } from "lucide-react";
 
 const navItems = [
   { href: "/aura-analysis", label: "Overview", icon: LayoutDashboard },
   { href: "/aura-analysis/calculator", label: "Trade Calculator", icon: Calculator },
+  { href: "/aura-analysis/validator", label: "Trade Validator", icon: ClipboardCheck },
   { href: "/aura-analysis/journal", label: "Trade Journal", icon: BookOpen },
   { href: "/aura-analysis/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/aura-analysis/leaderboard", label: "Leaderboard", icon: Trophy },

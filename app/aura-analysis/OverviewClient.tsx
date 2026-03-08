@@ -78,20 +78,20 @@ export function OverviewClient({
 
   return (
     <motion.div
-      className="space-y-6 sm:space-y-8"
+      className="space-y-8 sm:space-y-10"
       initial="hidden"
       animate="show"
       variants={container}
     >
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+        <div className="flex items-center gap-2 rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
         </div>
       )}
       {isDemo && (
-        <div className="flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-4 py-3 text-sm text-foreground">
-          <BarChart3 className="h-4 w-4 shrink-0" />
+        <div className="flex items-center gap-3 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 text-sm text-foreground">
+          <BarChart3 className="h-5 w-5 shrink-0 text-primary" />
           <span>Showing sample data. Add trades to see your real performance.</span>
           <Button asChild size="sm" className="ml-auto shrink-0">
             <Link href="/aura-analysis/calculator">Add trade</Link>
@@ -99,8 +99,11 @@ export function OverviewClient({
         </div>
       )}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Overview</h1>
-        <Button asChild className="w-full sm:w-auto">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Overview</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Your trading performance at a glance</p>
+        </div>
+        <Button asChild className="w-full sm:w-auto shadow-sm">
           <Link href="/aura-analysis/calculator">
             <Plus className="mr-2 h-4 w-4" />
             Quick add trade
@@ -108,7 +111,7 @@ export function OverviewClient({
         </Button>
       </div>
 
-      <motion.div variants={item} className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+      <motion.div variants={item} className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <KPICard title="Total Trades" value={displayKpis.totalTrades} />
         <KPICard
           title="Win Rate"
@@ -141,17 +144,17 @@ export function OverviewClient({
       </motion.div>
 
       <motion.div variants={item} className="grid gap-4 sm:gap-6 lg:grid-cols-2">
-        <Card className="glass overflow-hidden">
+        <Card className="overflow-hidden border-border/80 bg-card shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Equity Curve</CardTitle>
+            <CardTitle className="text-lg font-semibold">Equity Curve</CardTitle>
           </CardHeader>
           <CardContent className="min-h-[240px] sm:min-h-[280px]">
             <EquityCurveChart data={equityData} height={260} />
           </CardContent>
         </Card>
-        <Card className="glass overflow-hidden">
+        <Card className="overflow-hidden border-border/80 bg-card shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Performance by Pair</CardTitle>
+            <CardTitle className="text-lg font-semibold">Performance by Pair</CardTitle>
           </CardHeader>
           <CardContent className="min-h-[240px] sm:min-h-[280px]">
             <PerformanceByPairChart data={pairData.slice(0, 8)} height={260} />
@@ -160,26 +163,27 @@ export function OverviewClient({
       </motion.div>
 
       <motion.div variants={item} className="grid gap-4 sm:gap-6 lg:grid-cols-2">
-        <Card className="glass overflow-hidden">
+        <Card className="overflow-hidden border-border/80 bg-card shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Performance by Session</CardTitle>
+            <CardTitle className="text-lg font-semibold">Performance by Session</CardTitle>
           </CardHeader>
           <CardContent className="min-h-[200px] sm:min-h-[240px]">
             <SessionChart data={sessionData} height={220} />
           </CardContent>
         </Card>
-        <Card className="glass overflow-hidden">
+        <Card className="overflow-hidden border-border/80 bg-card shadow-sm">
           <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between pb-2">
-            <CardTitle className="text-lg">Recent Trades</CardTitle>
+            <CardTitle className="text-lg font-semibold">Recent Trades</CardTitle>
             <Link href="/aura-analysis/journal" className="shrink-0">
               <Button variant="ghost" size="sm">View all</Button>
             </Link>
           </CardHeader>
           <CardContent>
             {recentTrades.length === 0 && !isDemo ? (
-              <div className="flex flex-col items-center justify-center py-10 text-center">
-                <p className="text-sm text-muted-foreground">No trades yet.</p>
-                <Button asChild variant="outline" size="sm" className="mt-3">
+              <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-muted/20 py-12 text-center">
+                <p className="text-sm font-medium text-muted-foreground">No trades yet</p>
+                <p className="text-xs text-muted-foreground">Add your first trade to see it here</p>
+                <Button asChild variant="outline" size="sm">
                   <Link href="/aura-analysis/calculator">Add your first trade</Link>
                 </Button>
               </div>

@@ -19,16 +19,16 @@ export function KPICard({ title, value, subtitle, trend = "neutral", className }
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
     >
-      <Card className={cn("glass", className)}>
+      <Card className={cn("border-border/80 bg-card shadow-sm", className)}>
         <CardHeader className="pb-1">
           <p className="text-sm font-medium text-muted-foreground">{title}</p>
         </CardHeader>
         <CardContent>
           <p
             className={cn(
-              "text-2xl font-bold",
-              trend === "up" && "text-emerald-500",
-              trend === "down" && "text-red-500"
+              "text-2xl font-bold tabular-nums",
+              trend === "up" && "text-emerald-600 dark:text-emerald-400",
+              trend === "down" && "text-red-600 dark:text-red-400"
             )}
           >
             {value}

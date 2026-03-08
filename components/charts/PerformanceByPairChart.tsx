@@ -1,7 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { formatCurrencySafe } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { BarChart3 } from "lucide-react";
 
 interface PairPoint {
   pair: string;
@@ -18,10 +21,21 @@ export function PerformanceByPairChart({ data, height = 280 }: PerformanceByPair
   if (!safeData.length) {
     return (
       <div
-        className="flex items-center justify-center rounded-lg border border-border bg-card/30 text-muted-foreground text-sm"
-        style={{ height }}
+        className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-muted/20 px-4 py-8"
+        style={{ minHeight: height }}
       >
-        No pair data yet.
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+          <BarChart3 className="h-6 w-6 text-primary" />
+        </div>
+        <p className="text-center text-sm font-medium text-muted-foreground">
+          No pair data yet
+        </p>
+        <p className="text-center text-xs text-muted-foreground">
+          Close trades to see performance by pair.
+        </p>
+        <Button asChild variant="outline" size="sm">
+          <Link href="/aura-analysis/calculator">Add trade</Link>
+        </Button>
       </div>
     );
   }

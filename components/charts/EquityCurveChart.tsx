@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   AreaChart,
   Area,
@@ -10,6 +11,8 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { formatCurrencySafe } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { TrendingUp } from "lucide-react";
 
 interface EquityPoint {
   date: string;
@@ -26,10 +29,21 @@ export function EquityCurveChart({ data, height = 280 }: EquityCurveChartProps) 
   if (!safeData.length) {
     return (
       <div
-        className="flex items-center justify-center rounded-lg border border-border bg-card/30 text-muted-foreground text-sm"
-        style={{ height }}
+        className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-muted/20 px-4 py-8"
+        style={{ minHeight: height }}
       >
-        No equity data yet. Add trades to see your curve.
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+          <TrendingUp className="h-6 w-6 text-primary" />
+        </div>
+        <p className="text-center text-sm font-medium text-muted-foreground">
+          No equity data yet
+        </p>
+        <p className="text-center text-xs text-muted-foreground">
+          Add trades with results to see your equity curve.
+        </p>
+        <Button asChild variant="outline" size="sm">
+          <Link href="/aura-analysis/calculator">Add trade</Link>
+        </Button>
       </div>
     );
   }

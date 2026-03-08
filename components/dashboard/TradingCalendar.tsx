@@ -12,10 +12,11 @@ import {
   isSameMonth,
   eachDayOfInterval,
   parseISO,
+  isToday,
 } from "date-fns";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, CalendarDays, TrendingUp, TrendingDown } from "lucide-react";
 import { formatCurrencySafe } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -88,30 +89,61 @@ export function TradingCalendar({ trades, className }: TradingCalendarProps) {
   const selectedDayStats = selectedDate ? byDay.get(selectedDate) ?? null : null;
 
   return (
-    <Card className={cn("glass overflow-hidden", className)}>
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <CalendarIcon className="h-5 w-5" />
-            Trading calendar
-          </CardTitle>
-          <div className="flex items-center gap-1">
+    <Card className={cn("overflow-hidden border-border/80 bg-card/80 shadow-lg", className)}>
+      {/* Prominent monthly summary — Tradezella-style */}
+      <div className="border-b border-border/60 bg-muted/30 px-4 py-4 sm:px-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+              <CalendarDays className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                {format(viewDate, "MMMM yyyy")} — Monthly total
+              </p>
+              <div className="mt-0.5 flex flex-wrap items-baseline gap-3">
+                <span
+                  className={cn(
+                    "text-2xl font-bold tabular-nums sm:text-3xl",
+                    monthStats.pnl > 0 && "text-emerald-600 dark:text-emerald-400",
+                    monthStats.pnl < 0 && "text-red-600 dark:text-red-400",
+                    monthStats.pnl === 0 && "text-muted-foreground"
+                  )}
+                >
+                  {formatCurrencySafe(monthStats.pnl)}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {monthStats.trades} trades
+                  {monthStats.trades > 0 && (
+                    <span className="ml-1.5">
+                      · <span className="text-emerald-600 dark:text-emerald-400">{monthStats.wins}W</span>
+                      {" "}<span className="text-red-600 dark:text-red-400">{monthStats.losses}L</span>
+                      {monthStats.breakevens > 0 && (
+                        <span className="ml-1 text-muted-foreground">{monthStats.breakevens}BE</span>
+                      )}
+                    </span>
+                  )}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8"
+              className="h-9 w-9 rounded-lg"
               onClick={() => setViewDate((d) => subMonths(d, 1))}
               aria-label="Previous month"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <span className="min-w-[7rem] text-center text-sm font-medium">
+            <span className="min-w-[8rem] text-center text-sm font-semibold">
               {format(viewDate, "MMMM yyyy")}
             </span>
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8"
+              className="h-9 w-9 rounded-lg"
               onClick={() => setViewDate((d) => addMonths(d, 1))}
               aria-label="Next month"
             >
@@ -119,13 +151,15 @@ export function TradingCalendar({ trades, className }: TradingCalendarProps) {
             </Button>
           </div>
         </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-7 gap-0.5 text-center">
+      </div>
+
+      <CardContent className="p-4 sm:p-6">
+        {/* Calendar grid — color-coded days */}
+        <div className="grid grid-cols-7 gap-1 sm:gap-2">
           {WEEKDAY_HEADERS.map((day) => (
             <div
               key={day}
-              className="py-1 text-xs font-medium text-muted-foreground"
+              className="py-2 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground"
             >
               {day}
             </div>
@@ -137,6 +171,10 @@ export function TradingCalendar({ trades, className }: TradingCalendarProps) {
             const isSelected = selectedDate === dateKey;
             const hasActivity = stats && stats.trades > 0;
             const dayPnL = stats?.pnl ?? 0;
+            const isWin = hasActivity && dayPnL > 0;
+            const isLoss = hasActivity && dayPnL < 0;
+            const isBE = hasActivity && dayPnL === 0;
+            const today = isToday(day);
 
             return (
               <button
@@ -144,12 +182,15 @@ export function TradingCalendar({ trades, className }: TradingCalendarProps) {
                 type="button"
                 onClick={() => setSelectedDate(hasActivity ? dateKey : null)}
                 className={cn(
-                  "relative flex min-h-[2.25rem] flex-col items-center justify-center rounded-md p-1 text-sm transition-colors",
-                  !isCurrentMonth && "text-muted-foreground/60",
-                  isCurrentMonth && "text-foreground",
-                  hasActivity &&
-                    "hover:bg-muted/80 focus:bg-muted/80 focus:outline-none focus:ring-2 focus:ring-ring",
-                  isSelected && "bg-primary/15 ring-2 ring-primary/50"
+                  "relative flex min-h-[2.75rem] sm:min-h-[3.25rem] flex-col items-center justify-center rounded-lg p-1.5 text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background",
+                  !isCurrentMonth && "text-muted-foreground/50",
+                  isCurrentMonth && !hasActivity && "text-foreground hover:bg-muted/60",
+                  hasActivity && "text-foreground",
+                  isWin && "bg-emerald-500/20 hover:bg-emerald-500/30 dark:bg-emerald-500/15 dark:hover:bg-emerald-500/25",
+                  isLoss && "bg-red-500/20 hover:bg-red-500/30 dark:bg-red-500/15 dark:hover:bg-red-500/25",
+                  isBE && "bg-amber-500/15 hover:bg-amber-500/25 dark:bg-amber-500/10 dark:hover:bg-amber-500/20",
+                  isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+                  today && "ring-1 ring-primary/50"
                 )}
                 aria-label={
                   hasActivity
@@ -157,92 +198,67 @@ export function TradingCalendar({ trades, className }: TradingCalendarProps) {
                     : dateKey
                 }
               >
-                <span>{format(day, "d")}</span>
+                <span className={cn("tabular-nums", today && "font-bold")}>
+                  {format(day, "d")}
+                </span>
                 {hasActivity && (
-                  <span
-                    className={cn(
-                      "mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full",
-                      dayPnL > 0 && "bg-emerald-500",
-                      dayPnL < 0 && "bg-red-500",
-                      dayPnL === 0 && "bg-muted-foreground/60"
-                    )}
-                  />
+                  <span className="mt-1 line-clamp-1 max-w-full truncate text-[10px] sm:text-xs font-semibold tabular-nums">
+                    {dayPnL >= 0 ? "+" : ""}{formatCurrencySafe(dayPnL)}
+                  </span>
                 )}
               </button>
             );
           })}
         </div>
 
-        <div className="grid gap-3 border-t border-border/60 pt-4 sm:grid-cols-2">
-          <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Monthly results — {format(viewDate, "MMMM yyyy")}
-            </p>
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-              <span>{monthStats.trades} trades</span>
-              <span className="text-emerald-600 dark:text-emerald-400">
-                {monthStats.wins} W
-              </span>
-              <span className="text-red-600 dark:text-red-400">
-                {monthStats.losses} L
-              </span>
-              {monthStats.breakevens > 0 && (
-                <span className="text-muted-foreground">
-                  {monthStats.breakevens} BE
+        {/* Daily results panel when a day is selected */}
+        <div className="mt-6 rounded-xl border border-border/60 bg-muted/20 p-4">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            {selectedDate
+              ? `Daily results — ${format(parseISO(selectedDate), "EEEE, MMM d, yyyy")}`
+              : "Click a day with trades to see results"}
+          </p>
+          {selectedDayStats ? (
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Trades</span>
+                <span className="text-lg font-semibold tabular-nums">{selectedDayStats.trades}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-emerald-500" />
+                <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+                  {selectedDayStats.wins} wins
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <TrendingDown className="h-4 w-4 text-red-500" />
+                <span className="text-sm font-medium text-red-600 dark:text-red-400">
+                  {selectedDayStats.losses} losses
+                </span>
+              </div>
+              {selectedDayStats.breakevens > 0 && (
+                <span className="text-sm text-muted-foreground">
+                  {selectedDayStats.breakevens} breakeven
                 </span>
               )}
-              <span
+              <div
                 className={cn(
-                  "font-medium",
-                  monthStats.pnl >= 0
+                  "ml-auto text-lg font-bold tabular-nums",
+                  selectedDayStats.pnl >= 0
                     ? "text-emerald-600 dark:text-emerald-400"
                     : "text-red-600 dark:text-red-400"
                 )}
               >
-                {formatCurrencySafe(monthStats.pnl)} PnL
-              </span>
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-border/60 bg-muted/30 p-3">
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              {selectedDate
-                ? `Daily results — ${format(parseISO(selectedDate), "EEEE, MMM d, yyyy")}`
-                : "Click a day with trades"}
-            </p>
-            {selectedDayStats ? (
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                <span>{selectedDayStats.trades} trades</span>
-                <span className="text-emerald-600 dark:text-emerald-400">
-                  {selectedDayStats.wins} W
-                </span>
-                <span className="text-red-600 dark:text-red-400">
-                  {selectedDayStats.losses} L
-                </span>
-                {selectedDayStats.breakevens > 0 && (
-                  <span className="text-muted-foreground">
-                    {selectedDayStats.breakevens} BE
-                  </span>
-                )}
-                <span
-                  className={cn(
-                    "font-medium",
-                    selectedDayStats.pnl >= 0
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-red-600 dark:text-red-400"
-                  )}
-                >
-                  {formatCurrencySafe(selectedDayStats.pnl)} PnL
-                </span>
+                {selectedDayStats.pnl >= 0 ? "+" : ""}{formatCurrencySafe(selectedDayStats.pnl)} PnL
               </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                {selectedDate
-                  ? "No trades on this day."
-                  : "Select a day in the calendar to see that day's results."}
-              </p>
-            )}
-          </div>
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              {selectedDate
+                ? "No trades on this day."
+                : "Select a day in the calendar above to view that day's performance."}
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>
