@@ -13,6 +13,14 @@ export interface AssetMeta {
   assetClass?: string;
 }
 
+/** Registry meta passed from asset config (form/calculator). */
+export interface RegistryMeta {
+  pip_multiplier: number;
+  pip_value_hint?: number | null;
+  contract_size_hint?: number | null;
+  quote_type?: string | null;
+}
+
 const DEFAULT_PIP_MULTIPLIERS: Record<string, number> = {
   EURUSD: 10000,
   GBPUSD: 10000,
@@ -76,17 +84,18 @@ function getDefaultPipMultiplier(symbol: string): number {
   return 10000;
 }
 
-export function getAssetMeta(symbol: string, registryMeta?: { pip_multiplier: number; pip_value_hint?: number | null; contract_size_hint?: number | null }): AssetMeta {
+export function getAssetMeta(symbol: string, registryMeta?: RegistryMeta): AssetMeta {
   const pipMultiplier = registryMeta?.pip_multiplier ?? getDefaultPipMultiplier(symbol);
   return {
     symbol: symbol.toUpperCase(),
     pipMultiplier,
     pipValueHint: registryMeta?.pip_value_hint ?? undefined,
     contractSizeHint: registryMeta?.contract_size_hint ?? undefined,
+    quoteType: registryMeta?.quote_type ?? undefined,
   };
 }
 
-export function getPipMultiplier(symbol: string, registryMeta?: { pip_multiplier: number }): number {
+export function getPipMultiplier(symbol: string, registryMeta?: RegistryMeta): number {
   return registryMeta?.pip_multiplier ?? getDefaultPipMultiplier(symbol);
 }
 
@@ -95,12 +104,12 @@ export function calcRiskAmount(balance: number, riskPercent: number): number {
   return (balance * riskPercent) / 100;
 }
 
-export function calcStopLossDistance(entry: number, stop: number, symbol: string, registryMeta?: { pip_multiplier: number }): number {
+export function calcStopLossDistance(entry: number, stop: number, symbol: string, registryMeta?: RegistryMeta): number {
   const mult = getPipMultiplier(symbol, registryMeta);
   return Math.abs(entry - stop) * mult;
 }
 
-export function calcTakeProfitDistance(entry: number, tp: number, symbol: string, registryMeta?: { pip_multiplier: number }): number {
+export function calcTakeProfitDistance(entry: number, tp: number, symbol: string, registryMeta?: RegistryMeta): number {
   const mult = getPipMultiplier(symbol, registryMeta);
   return Math.abs(tp - entry) * mult;
 }
@@ -119,7 +128,7 @@ export interface PositionSizeParams {
   stop: number;
   symbol: string;
   pipValueOverride?: number;
-  registryMeta?: { pip_multiplier: number; pip_value_hint?: number | null; contract_size_hint?: number | null };
+  registryMeta?: RegistryMeta;
 }
 
 export function calcPositionSize(params: PositionSizeParams): number {
@@ -132,7 +141,8 @@ export function calcPositionSize(params: PositionSizeParams): number {
   if (pipValue == null && meta.pipValueHint != null) pipValue = meta.pipValueHint;
   if (pipValue == null) {
     const mult = meta.pipMultiplier;
-    if (symbol.toUpperCase().includes("JPY") || meta.quoteType === "JPY") {
+    const isJpy = symbol.toUpperCase().includes("JPY") || meta.quoteType === "JPY";
+    if (isJpy) {
       pipValue = 10;
     } else {
       pipValue = 100000 / mult;
@@ -142,34 +152,31 @@ export function calcPositionSize(params: PositionSizeParams): number {
   return Math.max(0, positionSize);
 }
 
-export function calcPotentialProfit(entry: number, tp: number, positionSize: number, symbol: string, registryMeta?: { pip_multiplier: number }): number {
+function getPipValueForPnL(symbol: string, meta: AssetMeta): number {
+  if (meta.pipValueHint != null) return meta.pipValueHint;
+  const isJpy = symbol.toUpperCase().includes("JPY") || meta.quoteType === "JPY";
+  return isJpy ? 10 : 100000 / meta.pipMultiplier;
+}
+
+export function calcPotentialProfit(entry: number, tp: number, positionSize: number, symbol: string, registryMeta?: RegistryMeta): number {
   const tpPips = calcTakeProfitDistance(entry, tp, symbol, registryMeta);
   const meta = getAssetMeta(symbol, registryMeta);
-  let pipValue = meta.pipValueHint;
-  if (pipValue == null) {
-    pipValue = symbol.toUpperCase().includes("JPY") ? 10 : 100000 / meta.pipMultiplier;
-  }
+  const pipValue = getPipValueForPnL(symbol, meta);
   return tpPips * pipValue * positionSize;
 }
 
-export function calcPotentialLoss(entry: number, stop: number, positionSize: number, symbol: string, registryMeta?: { pip_multiplier: number }): number {
+export function calcPotentialLoss(entry: number, stop: number, positionSize: number, symbol: string, registryMeta?: RegistryMeta): number {
   const slPips = calcStopLossDistance(entry, stop, symbol, registryMeta);
   const meta = getAssetMeta(symbol, registryMeta);
-  let pipValue = meta.pipValueHint;
-  if (pipValue == null) {
-    pipValue = symbol.toUpperCase().includes("JPY") ? 10 : 100000 / meta.pipMultiplier;
-  }
+  const pipValue = getPipValueForPnL(symbol, meta);
   return slPips * pipValue * positionSize;
 }
 
-export function calcTradePnL(entry: number, exit: number, positionSize: number, direction: "buy" | "sell", symbol: string, registryMeta?: { pip_multiplier: number }): number {
+export function calcTradePnL(entry: number, exit: number, positionSize: number, direction: "buy" | "sell", symbol: string, registryMeta?: RegistryMeta): number {
   const diff = exit - entry;
   const pips = (direction === "buy" ? diff : -diff) * getPipMultiplier(symbol, registryMeta);
   const meta = getAssetMeta(symbol, registryMeta);
-  let pipValue = meta.pipValueHint;
-  if (pipValue == null) {
-    pipValue = symbol.toUpperCase().includes("JPY") ? 10 : 100000 / meta.pipMultiplier;
-  }
+  const pipValue = getPipValueForPnL(symbol, meta);
   return pips * pipValue * positionSize;
 }
 
@@ -205,7 +212,7 @@ export function calcClosedTradePnLAndR(
   riskAmount: number,
   direction: "buy" | "sell",
   symbol: string,
-  registryMeta?: { pip_multiplier: number }
+  registryMeta?: RegistryMeta
 ): { pnl: number; rMultiple: number; result: "win" | "loss" | "breakeven" } {
   const pnl = calcTradePnL(entry, exit, positionSize, direction, symbol, registryMeta);
   const rMultiple = calcRMultiple(riskAmount, pnl);

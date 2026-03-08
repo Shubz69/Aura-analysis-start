@@ -24,8 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { formatCurrencySafe, formatRR, formatDistance, formatPositionSize } from "@/lib/utils";
-import { getAssetMetadata } from "@/lib/config/auraAnalysisAssets";
+import { formatCurrencySafe, formatRR, formatDistance, formatPositionSize, getPositionSizeKind } from "@/lib/utils";
+import { getAssetMetadata, ASSET_CLASS_ORDER, ASSET_CLASS_LABELS } from "@/lib/config/auraAnalysisAssets";
 import { getEntryPlaceholder, getStopPlaceholder, getTpPlaceholder } from "@/lib/config/assetExamples";
 import {
   DEFAULT_CHECKLIST_ITEMS,
@@ -114,11 +114,13 @@ export function TradeCalculatorForm({
             pip_multiplier: assetMeta.pip_multiplier,
             pip_value_hint: assetMeta.pip_value_hint ?? undefined,
             contract_size_hint: assetMeta.contract_size_hint ?? undefined,
+            quote_type: assetMeta.quote_type ?? undefined,
           }
         : {
             pip_multiplier: assetConfig.pipMultiplier,
             pip_value_hint: assetConfig.pipValueHint ?? undefined,
             contract_size_hint: assetConfig.contractSizeHint ?? undefined,
+            quote_type: assetConfig.quoteType ?? undefined,
           },
     [assetMeta, assetConfig]
   );
@@ -127,6 +129,16 @@ export function TradeCalculatorForm({
     () => assets.filter((a) => a.is_active).map((a) => ({ symbol: a.symbol, displayName: a.display_name })),
     [assets]
   );
+
+  const pairOptionGroups = useMemo(() => {
+    const active = assets.filter((a) => a.is_active);
+    return ASSET_CLASS_ORDER.map((cls) => ({
+      label: ASSET_CLASS_LABELS[cls],
+      options: active
+        .filter((a) => a.asset_class === cls)
+        .map((a) => ({ symbol: a.symbol, displayName: a.display_name })),
+    })).filter((g) => g.options.length > 0);
+  }, [assets]);
 
   const stepForPrecision = useMemo(() => {
     const p = assetConfig.pricePrecision;
@@ -247,6 +259,7 @@ export function TradeCalculatorForm({
                 <PairSelect
                   value={pair}
                   options={pairOptions}
+                  optionGroups={pairOptionGroups}
                   onValueChange={(v) => form.setValue("pair", v)}
                   placeholder="Select pair"
                 />
@@ -399,7 +412,7 @@ export function TradeCalculatorForm({
                 <Row label={`Stop loss (${assetConfig.distanceType === "pip" ? "pips" : assetConfig.distanceType === "point" ? "pts" : "units"})`} value={formatDistance(computed.stopLossPips, assetConfig.distanceType, 1)} />
                 <Row label={`Take profit (${assetConfig.distanceType === "pip" ? "pips" : assetConfig.distanceType === "point" ? "pts" : "units"})`} value={formatDistance(computed.takeProfitPips, assetConfig.distanceType, 1)} />
                 <Row label="Risk:reward" value={formatRR(computed.rr)} />
-                <Row label="Position size" value={formatPositionSize(computed.positionSize, assetConfig.assetClass === "indices" ? "contracts" : "lots", 4)} />
+                <Row label={`Position size (${getPositionSizeKind(assetConfig.assetClass)})`} value={formatPositionSize(computed.positionSize, getPositionSizeKind(assetConfig.assetClass), 4)} />
                 <Row label="Potential profit" value={formatCurrencySafe(computed.potentialProfit)} className="text-emerald-500" />
                 <Row label="Potential loss" value={formatCurrencySafe(computed.potentialLoss)} className="text-red-500" />
                 <Row label="R multiple (if TP hit)" value={formatRR(computed.rMultiple)} />

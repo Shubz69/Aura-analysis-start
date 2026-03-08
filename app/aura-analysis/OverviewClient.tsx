@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/table";
 import { Plus, BarChart3, AlertCircle } from "lucide-react";
 import { formatCurrencySafe, formatPercentSafe, formatRSafe } from "@/lib/utils";
+import { TradingCalendar, type CalendarTrade } from "@/components/dashboard/TradingCalendar";
 
 interface OverviewClientProps {
   kpis: {
@@ -42,6 +43,7 @@ interface OverviewClientProps {
   }>;
   pairData: { pair: string; pnl: number }[];
   sessionData: { session: string; pnl: number }[];
+  calendarTrades: CalendarTrade[];
   isDemo?: boolean;
   error?: string | null;
 }
@@ -55,6 +57,7 @@ export function OverviewClient({
   recentTrades,
   pairData,
   sessionData,
+  calendarTrades,
   isDemo = false,
   error,
 }: OverviewClientProps) {
@@ -131,6 +134,10 @@ export function OverviewClient({
         <KPICard title="Average RR" value={displayKpis.totalTrades ? formatRSafe(displayKpis.avgRR) : "—"} />
         <KPICard title="Best Pair" value={displayKpis.bestPair ?? "—"} />
         <KPICard title="Worst Pair" value={displayKpis.worstPair ?? "—"} />
+      </motion.div>
+
+      <motion.div variants={item}>
+        <TradingCalendar trades={calendarTrades} />
       </motion.div>
 
       <motion.div variants={item} className="grid gap-4 sm:gap-6 lg:grid-cols-2">

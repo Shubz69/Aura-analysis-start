@@ -64,6 +64,13 @@ export default async function DashboardOverviewPage() {
     worstPair: datasets.kpiSummary.worstPair,
   };
 
+  const calendarTrades = tradeList.map((t) => ({
+    date: new Date(t.created_at).toISOString().slice(0, 10),
+    result: t.result,
+    pnl: Number(t.pnl) || 0,
+    id: String(t.id),
+  }));
+
   return (
     <OverviewClient
       kpis={kpis}
@@ -71,6 +78,7 @@ export default async function DashboardOverviewPage() {
       recentTrades={recentTrades}
       pairData={pairData}
       sessionData={sessionData}
+      calendarTrades={calendarTrades}
       isDemo={!hasData}
       error={null}
     />

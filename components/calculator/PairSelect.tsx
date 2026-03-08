@@ -10,9 +10,18 @@ export interface PairOption {
   displayName: string;
 }
 
+/** Optional: pass grouped options for section headers (e.g. by asset class). */
+export interface PairOptionGroup {
+  label: string;
+  options: PairOption[];
+}
+
 interface PairSelectProps {
   value: string;
+  /** Flat list of options (used if groups not provided). */
   options: PairOption[];
+  /** Optional grouped options; if provided, dropdown shows sections by label. */
+  optionGroups?: PairOptionGroup[];
   onValueChange: (symbol: string) => void;
   placeholder?: string;
   className?: string;
@@ -22,6 +31,7 @@ interface PairSelectProps {
 export function PairSelect({
   value,
   options,
+  optionGroups,
   onValueChange,
   placeholder = "Select pair",
   className,
@@ -31,19 +41,40 @@ export function PairSelect({
   const [search, setSearch] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const flatFromGroups = useMemo(
+    () => (optionGroups ? optionGroups.flatMap((g) => g.options) : options),
+    [optionGroups, options]
+  );
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return options;
+    if (!search.trim()) return optionGroups ?? [{ label: "", options }];
     const q = search.toLowerCase().trim();
-    return options.filter(
+    const filteredFlat = flatFromGroups.filter(
       (o) =>
         o.symbol.toLowerCase().includes(q) ||
         o.displayName.toLowerCase().includes(q)
     );
-  }, [options, search]);
+    if (!optionGroups) return [{ label: "", options: filteredFlat }];
+    const groups: PairOptionGroup[] = [];
+    for (const g of optionGroups) {
+      const match = g.options.filter(
+        (o) =>
+          o.symbol.toLowerCase().includes(q) ||
+          o.displayName.toLowerCase().includes(q)
+      );
+      if (match.length) groups.push({ label: g.label, options: match });
+    }
+    return groups;
+  }, [optionGroups, options, flatFromGroups, search]);
+
+  const filteredFlat = useMemo(
+    () => (Array.isArray(filtered) && filtered[0]?.label === "" ? filtered[0].options : filtered.flatMap((g) => g.options)),
+    [filtered]
+  );
 
   const selectedOption = useMemo(
-    () => options.find((o) => o.symbol === value),
-    [options, value]
+    () => flatFromGroups.find((o) => o.symbol === value),
+    [flatFromGroups, value]
   );
 
   useEffect(() => {
@@ -103,10 +134,10 @@ export function PairSelect({
             />
           </div>
           <div className="max-h-60 overflow-auto p-1.5">
-            {filtered.length === 0 ? (
+            {filteredFlat.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted-foreground">No pair found.</p>
-            ) : (
-              filtered.map((o) => (
+            ) : Array.isArray(filtered) && filtered[0]?.label === "" ? (
+              filtered[0].options.map((o) => (
                 <button
                   key={o.symbol}
                   type="button"
@@ -125,6 +156,34 @@ export function PairSelect({
                   <span className="font-medium">{o.symbol}</span>
                   <span className="ml-2 text-muted-foreground">{o.displayName}</span>
                 </button>
+              ))
+            ) : (
+              (filtered as PairOptionGroup[]).map((group) => (
+                <div key={group.label}>
+                  <div className="sticky top-0 bg-muted/80 px-2.5 py-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {group.label}
+                  </div>
+                  {group.options.map((o) => (
+                    <button
+                      key={o.symbol}
+                      type="button"
+                      role="option"
+                      aria-selected={o.symbol === value}
+                      className={cn(
+                        "flex w-full cursor-pointer items-center rounded-md py-2 px-2.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground",
+                        o.symbol === value && "bg-accent text-accent-foreground"
+                      )}
+                      onClick={() => {
+                        onValueChange(o.symbol);
+                        setOpen(false);
+                        setSearch("");
+                      }}
+                    >
+                      <span className="font-medium">{o.symbol}</span>
+                      <span className="ml-2 text-muted-foreground truncate">{o.displayName}</span>
+                    </button>
+                  ))}
+                </div>
               ))
             )}
           </div>

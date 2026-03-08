@@ -66,7 +66,15 @@ export function formatPositionSize(
   const s = v.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
   if (kind === "lots") return `${s} lots`;
   if (kind === "contracts") return `${s} contracts`;
-  return s;
+  return `${s} units`;
+}
+
+/** Position size label from asset class (for calculator: lots vs contracts vs units). */
+export function getPositionSizeKind(assetClass: string): "lots" | "contracts" | "units" {
+  const c = (assetClass || "").toLowerCase();
+  if (c === "indices" || c === "stocks" || c === "futures") return "contracts";
+  if (c === "crypto") return "units";
+  return "lots";
 }
 
 /** Percentage with safe fallback. */

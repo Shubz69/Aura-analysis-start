@@ -4,7 +4,6 @@
 import type { Trade } from "@/types";
 
 const RESOLVED = ["win", "loss", "breakeven"];
-const CLASSES = ["forex", "metal", "metals", "commodity", "energy", "index", "indices", "crypto"] as const;
 
 function closed(trades: Trade[]): Trade[] {
   return trades.filter((t) => RESOLVED.includes(t.result));
@@ -12,8 +11,8 @@ function closed(trades: Trade[]): Trade[] {
 
 function normalizeClass(c: string): string {
   const lower = c?.toLowerCase() ?? "other";
-  if (lower === "metals") return "metal";
-  if (lower === "indices") return "index";
+  if (lower === "metal") return "metals";
+  if (lower === "index") return "indices";
   return lower;
 }
 
