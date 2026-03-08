@@ -1,48 +1,57 @@
+import { headers, cookies } from "next/headers";
 import { buildOverviewDatasets } from "@/lib/analytics/chartDatasets";
 import { OverviewClient } from "./OverviewClient";
-import {
-  DEMO_EQUITY_CURVE,
-  DEMO_PAIR_PNL,
-  DEMO_SESSION_PNL,
-  DEMO_RECENT_TRADES,
-  DEMO_TRADES,
-} from "@/lib/demo-data";
-import { BYPASS_AUTH } from "@/lib/appConfig";
+import { getCurrentUserFromToken } from "@/lib/auth";
+import { query } from "@/lib/db";
+import { getTradesByUserId } from "@/lib/data/trades";
+
+export const dynamic = "force-dynamic";
+
+const EMPTY_DATASETS = {
+  kpiSummary: {
+    totalTrades: 0,
+    winRate: 0,
+    averageR: 0,
+    totalPnL: 0,
+    profitFactor: 0,
+    averageRR: 0,
+    bestPair: null as string | null,
+    worstPair: null as string | null,
+  },
+  equityCurveData: [] as { date: string; equity: number }[],
+  recentTrades: [] as { id: string; pair: string; direction: string; result: string; pnl: number; created_at: string }[],
+  pairPerformanceTop5: [] as { pair: string; tradeCount: number; totalPnL: number; winRate: number }[],
+  sessionPerformanceData: [] as { session: string; tradeCount: number; totalPnL: number; winRate: number }[],
+};
 
 export default async function DashboardOverviewPage() {
-  const tradeList = BYPASS_AUTH ? DEMO_TRADES : [];
-  const hasData = tradeList.length > 0;
   const startBalance = 10000;
+  let tradeList: Awaited<ReturnType<typeof getTradesByUserId>> = [];
 
+  try {
+    const h = await headers();
+    const c = await cookies();
+    const token = c.get("token")?.value;
+    const authHeader = h.get("authorization") ?? (token ? `Bearer ${token}` : null);
+    const req = { headers: { authorization: authHeader }, cookies: { token } };
+    const db = { query };
+    const user = await getCurrentUserFromToken(req, db);
+    if (user) tradeList = await getTradesByUserId(user.id);
+  } catch {
+    tradeList = [];
+  }
+
+  const hasData = tradeList.length > 0;
   const datasets = hasData
-    ? buildOverviewDatasets(tradeList, startBalance)
-    : {
-        kpiSummary: {
-          totalTrades: 0,
-          winRate: 0,
-          averageR: 0,
-          totalPnL: 0,
-          profitFactor: 0,
-          averageRR: 0,
-          bestPair: null as string | null,
-          worstPair: null as string | null,
-        },
-        equityCurveData: DEMO_EQUITY_CURVE,
-        recentTrades: DEMO_RECENT_TRADES,
-        pairPerformanceTop5: [] as { pair: string; tradeCount: number; totalPnL: number; winRate: number }[],
-        sessionPerformanceData: [] as { session: string; tradeCount: number; totalPnL: number; winRate: number }[],
-      };
+    ? buildOverviewDatasets(tradeList as Parameters<typeof buildOverviewDatasets>[0], startBalance)
+    : EMPTY_DATASETS;
 
-  const equityData = hasData ? datasets.equityCurveData : DEMO_EQUITY_CURVE;
-  const recentTrades = hasData ? datasets.recentTrades : DEMO_RECENT_TRADES;
-  const pairData = hasData
-    ? datasets.pairPerformanceTop5.map((p) => ({ pair: p.pair, pnl: p.totalPnL }))
-    : DEMO_PAIR_PNL;
-  const sessionData = hasData
-    ? datasets.sessionPerformanceData
-        .filter((s) => s.tradeCount > 0)
-        .map((s) => ({ session: s.session, pnl: s.totalPnL }))
-    : DEMO_SESSION_PNL;
+  const equityData = datasets.equityCurveData;
+  const recentTrades = datasets.recentTrades;
+  const pairData = datasets.pairPerformanceTop5.map((p) => ({ pair: p.pair, pnl: p.totalPnL }));
+  const sessionData = datasets.sessionPerformanceData
+    .filter((s) => s.tradeCount > 0)
+    .map((s) => ({ session: s.session, pnl: s.totalPnL }));
 
   const kpis = {
     totalTrades: datasets.kpiSummary.totalTrades,

@@ -1,10 +1,6 @@
-import { ChecklistTemplatesClient } from "./ChecklistTemplatesClient";
+import { redirect } from "next/navigation";
 
-export default async function ChecklistTemplatesPage() {
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold tracking-tight">Checklist Templates</h1>
-      <ChecklistTemplatesClient templates={[]} isAdmin={false} />
-    </div>
-  );
+/** Checklist lives in Trade Calculator; redirect so one source of truth. */
+export default function ChecklistTemplatesPage() {
+  redirect("/aura-analysis/calculator");
 }

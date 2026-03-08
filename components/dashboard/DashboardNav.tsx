@@ -9,7 +9,6 @@ import {
   BookOpen,
   BarChart3,
   Trophy,
-  ListChecks,
   User,
   Shield,
 } from "lucide-react";
@@ -20,7 +19,6 @@ const navItems = [
   { href: "/aura-analysis/journal", label: "Trade Journal", icon: BookOpen },
   { href: "/aura-analysis/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/aura-analysis/leaderboard", label: "Leaderboard", icon: Trophy },
-  { href: "/aura-analysis/checklists", label: "Checklist Templates", icon: ListChecks },
   { href: "/aura-analysis/profile", label: "Profile", icon: User },
   { href: "/aura-analysis/admin", label: "Admin", icon: Shield },
 ];

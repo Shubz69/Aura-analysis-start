@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,9 @@ interface JournalClientProps {
 export function JournalClient({ initialTrades, openTradeId }: JournalClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [trades, setTrades] = useState<Trade[]>(initialTrades);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filterPair, setFilterPair] = useState<string>("all");
   const [filterResult, setFilterResult] = useState<string>("all");
@@ -44,18 +47,41 @@ export function JournalClient({ initialTrades, openTradeId }: JournalClientProps
   const [page, setPage] = useState(0);
   const [selectedTradeId, setSelectedTradeId] = useState<string | null>(openTradeId);
 
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setFetchError(null);
+    fetch("/api/aura-analysis/trades", { credentials: "include" })
+      .then((res) => {
+        if (!res.ok) throw new Error(res.status === 401 ? "Sign in to view trades" : "Failed to load trades");
+        return res.json();
+      })
+      .then((data: Trade[]) => {
+        if (cancelled) return;
+        setTrades(Array.isArray(data) ? data.map((t) => ({ ...t, id: String(t.id) })) : []);
+      })
+      .catch((e) => {
+        if (!cancelled) setFetchError(e.message ?? "Failed to load trades");
+        if (!cancelled) setTrades([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
   const pairs = useMemo(() => {
-    const set = new Set(initialTrades.map((t) => t.pair));
+    const set = new Set(trades.map((t) => t.pair));
     return Array.from(set).sort();
-  }, [initialTrades]);
+  }, [trades]);
 
   const sessions = useMemo(() => {
-    const values = initialTrades.map((t) => t.session).filter((s): s is NonNullable<typeof s> => s != null);
+    const values = trades.map((t) => t.session).filter((s): s is NonNullable<typeof s> => s != null);
     return Array.from(new Set(values)).sort();
-  }, [initialTrades]);
+  }, [trades]);
 
   const filtered = useMemo(() => {
-    let list = initialTrades;
+    let list = trades;
     if (search) {
       const q = search.toLowerCase();
       list = list.filter(
@@ -69,7 +95,7 @@ export function JournalClient({ initialTrades, openTradeId }: JournalClientProps
     if (filterDirection !== "all") list = list.filter((t) => t.direction === filterDirection);
     if (filterSession !== "all") list = list.filter((t) => (t.session ?? "") === filterSession);
     return list;
-  }, [initialTrades, search, filterPair, filterResult, filterDirection, filterSession]);
+  }, [trades, search, filterPair, filterResult, filterDirection, filterSession]);
 
   const paginated = useMemo(() => {
     const start = page * PAGE_SIZE;
@@ -147,7 +173,17 @@ export function JournalClient({ initialTrades, openTradeId }: JournalClientProps
         </Select>
       </div>
 
-      {filtered.length === 0 ? (
+      {fetchError ? (
+        <EmptyState
+          title="Could not load trades"
+          description={fetchError}
+        />
+      ) : loading ? (
+        <EmptyState
+          title="Loading…"
+          description="Fetching your trades."
+        />
+      ) : filtered.length === 0 ? (
         <EmptyState
           title="No trades found"
           description="Add trades from the Trade Calculator or adjust filters."
@@ -240,7 +276,7 @@ export function JournalClient({ initialTrades, openTradeId }: JournalClientProps
           open={!!selectedTradeId}
           onClose={closeTrade}
           onDeleted={closeTrade}
-          initialTrade={initialTrades.find((t) => t.id === selectedTradeId) ?? undefined}
+          initialTrade={trades.find((t) => t.id === selectedTradeId) ?? undefined}
         />
       )}
     </div>
