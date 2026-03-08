@@ -1,4 +1,5 @@
 import * as metrics from "@/lib/analytics";
+import { consistencyScore } from "@/lib/analytics/consistency";
 import { ProfileClient } from "./ProfileClient";
 
 const emptyTrades: never[] = [];
@@ -11,7 +12,7 @@ export default async function ProfilePage() {
     totalPnL: metrics.totalPnL(emptyTrades),
     bestPair: metrics.bestPair(emptyTrades),
     worstPair: metrics.worstPair(emptyTrades),
-    consistencyScore: metrics.consistencyScore(emptyTrades),
+    consistencyScore: consistencyScore(emptyTrades),
     sessionPnL: metrics.sessionPnL(emptyTrades),
   };
 

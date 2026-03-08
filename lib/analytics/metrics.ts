@@ -160,7 +160,8 @@ export function averageChecklistPercent(trades: Trade[]): number {
   return sum / withChecklist.length;
 }
 
-export function consistencyScore(trades: Trade[]): number {
+/** Legacy consistency score (trade-calculations). Use consistency.consistencyScore for the weighted 0–100 score. */
+export function legacyConsistencyScore(trades: Trade[]): number {
   return calcConsistencyScore(
     trades.map((t) => ({
       result: t.result,

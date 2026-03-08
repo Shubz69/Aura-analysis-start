@@ -41,7 +41,7 @@ export function sessionPerformance(trades: Trade[]): SessionStats[] {
     if (!bySession.has(s)) bySession.set(s, []);
   }
   const result: SessionStats[] = [];
-  for (const [session, list] of bySession) {
+  for (const [session, list] of Array.from(bySession.entries())) {
     if (list.length === 0) {
       result.push({
         session,

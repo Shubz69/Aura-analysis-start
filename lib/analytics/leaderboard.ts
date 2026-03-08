@@ -41,7 +41,7 @@ export function leaderboardFromTradesByUser(
   sortBy: LeaderboardSortKey = "totalPnL"
 ): LeaderboardUser[] {
   const users: LeaderboardUser[] = [];
-  for (const [userId, trades] of tradesByUser) {
+  for (const [userId, trades] of Array.from(tradesByUser.entries())) {
     const kpi = buildKpiSummary(trades);
     const pairs = pairPerformance(trades);
     const bestP = pairs.length ? pairs[0].pair : null;
@@ -65,10 +65,17 @@ export function leaderboardFromTradesByUser(
       averageChecklistPercent: safeNum(kpi.averageChecklistPercent),
     });
   }
-  users.sort((a, b) => {
-    const va = (a as Record<string, number>)[sortBy] ?? 0;
-    const vb = (b as Record<string, number>)[sortBy] ?? 0;
-    return vb - va; // descending: higher first
-  });
+  function sortValue(u: LeaderboardUser, key: LeaderboardSortKey): number {
+    switch (key) {
+      case "totalPnL": return u.totalPnL;
+      case "averageR": return u.averageR;
+      case "winRate": return u.winRate;
+      case "consistencyScore": return u.consistencyScore;
+      case "profitFactor": return u.profitFactor;
+      case "totalTrades": return u.totalTrades;
+      default: return 0;
+    }
+  }
+  users.sort((a, b) => sortValue(b, sortBy) - sortValue(a, sortBy));
   return users;
 }

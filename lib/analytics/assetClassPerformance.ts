@@ -40,7 +40,7 @@ export function assetClassPerformance(trades: Trade[]): AssetClassStats[] {
     byClass.get(cls)!.push(t);
   }
   const result: AssetClassStats[] = [];
-  for (const [assetClass, list] of byClass) {
+  for (const [assetClass, list] of Array.from(byClass.entries())) {
     const wins = list.filter((t) => t.result === "win").length;
     const totalPnL = list.reduce((a, t) => a + t.pnl, 0);
     const totalR = list.reduce((a, t) => a + t.r_multiple, 0);

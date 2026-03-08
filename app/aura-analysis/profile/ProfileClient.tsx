@@ -43,7 +43,7 @@ export function ProfileClient({ profile, email, kpis }: ProfileClientProps) {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <KPICard title="Total trades" value={kpis.totalTrades} />
-        <KPICard title="Win rate" value={formatPercent(kpis.winRate)} trend={kpis.winRate >= 50 ? "up" : "down"} />
+        <KPICard title="Win rate" value={formatPercentSafe(kpis.winRate)} trend={kpis.winRate >= 50 ? "up" : "down"} />
         <KPICard title="Average R" value={kpis.avgR.toFixed(2)} />
         <KPICard title="Total PnL" value={formatCurrencySafe(kpis.totalPnL)} trend={kpis.totalPnL >= 0 ? "up" : "down"} />
       </div>

@@ -41,7 +41,7 @@ export function pairPerformance(trades: Trade[]): PairStats[] {
     byPair.set(t.pair, list);
   }
   const result: PairStats[] = [];
-  for (const [pair, list] of byPair) {
+  for (const [pair, list] of Array.from(byPair.entries())) {
     const wins = list.filter((t) => t.result === "win").length;
     const losses = list.filter((t) => t.result === "loss").length;
     const breakevens = list.filter((t) => t.result === "breakeven").length;

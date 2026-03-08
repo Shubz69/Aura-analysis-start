@@ -56,7 +56,7 @@ export function ChecklistSection({
           return (
             <div
               key={item.id}
-              role="button"
+              role="checkbox"
               tabIndex={0}
               aria-checked={isChecked}
               aria-label={item.label}
