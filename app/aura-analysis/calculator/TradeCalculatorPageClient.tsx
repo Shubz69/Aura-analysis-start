@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { TradeCalculatorForm, type ComputedValues } from "@/components/forms/TradeCalculatorForm";
+import {
+  TradeCalculatorForm,
+  type ComputedValues,
+  type ChecklistSavePayload,
+} from "@/components/forms/TradeCalculatorForm";
 import type { TradeCalculatorForm as TradeCalculatorFormType } from "@/lib/validations/trade";
 import type { Asset } from "@/types";
 
@@ -23,10 +27,19 @@ export function TradeCalculatorPageClient({
   const router = useRouter();
 
   async function handleSave(
-    _values: TradeCalculatorFormType & { computed: ComputedValues }
+    values: TradeCalculatorFormType & {
+      computed: ComputedValues;
+      checklist: ChecklistSavePayload;
+    }
   ) {
     setSaving(true);
+    // Payload includes: pair, direction, accountBalance, riskPercent, entryPrice, stopLoss, takeProfit,
+    // session, notes, computed (riskAmount, stopLossPips, takeProfitPips, rr, positionSize, potentialProfit,
+    // potentialLoss, rMultiple, checklistScore, checklistTotal, checklistPercent, tradeGrade),
+    // checklist (checklistScore, checklistTotal, checklistPercent, tradeGrade, checklistItems).
     // Trade persistence will use existing Aura FX API when available.
+    void values;
+    void userId;
     setSaving(false);
     router.push("/aura-analysis/journal");
     router.refresh();
