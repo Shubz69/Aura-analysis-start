@@ -2,13 +2,43 @@
  * Trade data access. Table: aura_analysis_trades (MySQL).
  * Fallback to in-memory array if DB is not configured.
  */
+import fs from "fs";
+import path from "path";
 import { query, executeQuery } from "@/lib/db";
 
 const TABLE = "aura_analysis_trades";
 
-// In-memory fallback for users who haven't set up a database
-const MOCK_TRADES: TradeRow[] = [];
-let mockIdCounter = 1;
+// In-memory/file fallback for users who haven't set up a database
+const MOCK_FILE = path.join(process.cwd(), ".mock_trades.json");
+
+function getMockTrades(): TradeRow[] {
+  try {
+    if (fs.existsSync(MOCK_FILE)) {
+      const data = fs.readFileSync(MOCK_FILE, "utf-8");
+      return JSON.parse(data);
+    }
+  } catch (e) {
+    // ignore
+  }
+  return [];
+}
+
+function saveMockTrade(trade: TradeRow) {
+  try {
+    const trades = getMockTrades();
+    trades.unshift(trade);
+    fs.writeFileSync(MOCK_FILE, JSON.stringify(trades, null, 2));
+  } catch (e) {
+    // ignore
+  }
+}
+
+function getNextMockId(): number {
+  const trades = getMockTrades();
+  if (trades.length === 0) return 1;
+  const ids = trades.map(t => typeof t.id === 'number' ? t.id : parseInt(t.id as string, 10)).filter(n => !isNaN(n));
+  return ids.length > 0 ? Math.max(...ids) + 1 : 1;
+}
 
 export interface TradeRow {
   id: number | string;
@@ -60,8 +90,8 @@ export async function getTradesByUserId(
     console.warn("DB query failed, falling back to in-memory trades");
   }
   
-  // Fallback to in-memory mock trades
-  const userTrades = MOCK_TRADES.filter((t) => String(t.user_id) === String(userId));
+  // Fallback to in-memory/file mock trades
+  const userTrades = getMockTrades().filter((t) => String(t.user_id) === String(userId));
   return userTrades.slice(offset, offset + limit).map(normalizeTradeRow);
 }
 
@@ -148,9 +178,9 @@ export async function insertTrade(
     console.warn("DB insert failed, falling back to in-memory trades", e);
   }
 
-  // Fallback to in-memory array if DB query fails or returns no insertId
+  // Fallback to in-memory/file array if DB query fails or returns no insertId
   const mockTrade: TradeRow = {
-    id: mockIdCounter++,
+    id: getNextMockId(),
     user_id: userId,
     pair: body.pair || "",
     asset_id: body.asset_id ? String(body.asset_id) : null,
@@ -180,7 +210,7 @@ export async function insertTrade(
     notes: body.notes ?? null,
     created_at: new Date().toISOString(),
   };
-  MOCK_TRADES.unshift(mockTrade); // Add to beginning
+  saveMockTrade(mockTrade);
   return normalizeTradeRow(mockTrade);
 }
 

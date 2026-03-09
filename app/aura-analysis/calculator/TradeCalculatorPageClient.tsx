@@ -108,6 +108,10 @@ export function TradeCalculatorPageClient({
       }
       // Redirect to dashboard so updated numbers (KPIs, charts) are visible
       clearDraftTrade();
+      // Also clear the raw validator form local storage
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem("aura-trade-validator-checked");
+      }
       router.push("/aura-analysis");
       router.refresh();
     } catch (e) {
