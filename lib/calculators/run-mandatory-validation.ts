@@ -165,6 +165,51 @@ const cases: CaseResult[] = [];
   });
 })();
 
+// ─── TEST 4: XAUUSD BUY (0.10 lots display test) ──────────────────────────
+(function test4() {
+  const result = calculateRisk("XAUUSD", {
+    accountBalance: 10000,
+    riskPercent: 5,
+    entry: 2200,
+    stop: 2150,
+    takeProfit: 2250,
+    direction: "buy",
+  });
+  const expected = {
+    riskAmount: 500,
+    stopDistancePrice: 50,
+    takeProfitDistancePrice: 50,
+    riskReward: 1,
+    positionSize: 0.1,
+    potentialProfit: 500,
+    potentialLoss: 500,
+  };
+  const details: string[] = [];
+  let passed = true;
+  if (result.riskAmount !== expected.riskAmount) {
+    passed = false;
+    details.push(`riskAmount: expected ${expected.riskAmount}, got ${result.riskAmount}`);
+  }
+  if (result.positionSize !== expected.positionSize) {
+    passed = false;
+    details.push(`positionSize: expected ${expected.positionSize}, got ${result.positionSize}`);
+  }
+  if (result.potentialProfit !== expected.potentialProfit) {
+    passed = false;
+    details.push(`potentialProfit: expected ${expected.potentialProfit}, got ${result.potentialProfit}`);
+  }
+  if (result.potentialLoss !== expected.potentialLoss) {
+    passed = false;
+    details.push(`potentialLoss: expected ${expected.potentialLoss}, got ${result.potentialLoss}`);
+  }
+  if (passed) details.push("All fields match expected values.");
+  cases.push({
+    name: "TEST 4: XAUUSD BUY (balance 10000, risk 5%, entry 2200, stop 2150, tp 2250) - 0.10 lots",
+    passed,
+    details,
+  });
+})();
+
 // ─── Print summary ────────────────────────────────────────────────────────
 console.log("\n========== MANDATORY TEST CASES - VALIDATION SUMMARY ==========\n");
 

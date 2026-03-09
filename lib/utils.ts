@@ -64,11 +64,18 @@ export function formatPositionSize(
   _decimals?: number
 ): string {
   const v = safeNum(value, 0);
-  const isWhole = Number.isInteger(v) || Math.abs(v - Math.round(v * 100) / 100) < 1e-9;
+  
+  if (kind === "lots") {
+    // Always at least 2 decimals for lots
+    const s = v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 4 });
+    return `${s} lots`;
+  }
+
+  const isWhole = Number.isInteger(v) || Math.abs(v - Math.round(v)) < 1e-9;
   const s = isWhole
     ? v.toLocaleString("en-US", { maximumFractionDigits: 0 })
-    : v.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-  if (kind === "lots") return `${s} lots`;
+    : v.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 4 });
+    
   if (kind === "contracts") return `${s} contracts`;
   if (kind === "shares") return `${s} shares`;
   return `${s} units`;

@@ -37,6 +37,24 @@ describe("calculateRisk", () => {
       expect(result.potentialProfit).toBe(2000);
       expect(result.potentialLoss).toBe(1000);
     });
+
+    it("TEST 4: balance 10000, risk 5%, entry 2200, stop 2150, tp 2250 (0.10 lots)", () => {
+      const result = calculateRisk("XAUUSD", {
+        accountBalance: 10000,
+        riskPercent: 5,
+        entry: 2200,
+        stop: 2150,
+        takeProfit: 2250,
+        direction: "buy",
+      });
+      expect(result.riskAmount).toBe(500);
+      expect(result.stopDistancePrice).toBe(50);
+      expect(result.takeProfitDistancePrice).toBe(50);
+      expect(result.riskReward).toBe(1);
+      expect(result.positionSize).toBe(0.1);
+      expect(result.potentialProfit).toBe(500);
+      expect(result.potentialLoss).toBe(500);
+    });
   });
 
   describe("EURUSD BUY", () => {

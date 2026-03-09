@@ -15,18 +15,26 @@ export function calculateCommodity(input: CalculatorInput, spec: InstrumentSpec)
   const dollarRiskPerLot = stopDistancePrice * contractSize;
   const lots = riskAmount / dollarRiskPerLot;
   const lotStep = spec.lotStep ?? 0.01;
-  const positionSize = Math.max(0, roundToStep(lots, lotStep));
+  let positionSize = Math.max(0, roundToStep(lots, lotStep));
+
+  if (spec.minLot != null) {
+    if (lots > 0 && lots < spec.minLot) {
+      warnings.push("Trade size below minimum lot size for this instrument");
+      if (positionSize === 0) {
+        positionSize = lots;
+      }
+    } else if (positionSize > 0 && positionSize < spec.minLot) {
+      warnings.push("Trade size below minimum lot size for this instrument");
+    }
+  }
+
+  if (spec.maxLot != null && positionSize > spec.maxLot) {
+    warnings.push(`Position size ${positionSize} exceeds maximum ${spec.maxLot} lots.`);
+  }
 
   const potentialLoss = positionSize * dollarRiskPerLot;
   const potentialProfit = positionSize * takeProfitDistancePrice * contractSize;
   const rMultiple = riskReward;
-
-  if (spec.minLot != null && positionSize > 0 && positionSize < spec.minLot) {
-    warnings.push(`Position size ${positionSize} is below minimum ${spec.minLot} lots.`);
-  }
-  if (spec.maxLot != null && positionSize > spec.maxLot) {
-    warnings.push(`Position size ${positionSize} exceeds maximum ${spec.maxLot} lots.`);
-  }
 
   const pointSize = spec.pointSize ?? 1;
   const stopPoints = stopDistancePrice / pointSize;

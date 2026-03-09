@@ -27,18 +27,26 @@ export function calculateForex(input: CalculatorInput, spec: InstrumentSpec): Ca
 
   const positionSizeLots = riskAmount / (stopPips * pipValuePerLot);
   const lotStep = spec.lotStep ?? 0.01;
-  const positionSize = Math.max(0, roundToStep(positionSizeLots, lotStep));
+  let positionSize = Math.max(0, roundToStep(positionSizeLots, lotStep));
+
+  if (spec.minLot != null) {
+    if (positionSizeLots > 0 && positionSizeLots < spec.minLot) {
+      warnings.push("Trade size below minimum lot size for this instrument");
+      if (positionSize === 0) {
+        positionSize = positionSizeLots;
+      }
+    } else if (positionSize > 0 && positionSize < spec.minLot) {
+      warnings.push("Trade size below minimum lot size for this instrument");
+    }
+  }
+
+  if (spec.maxLot != null && positionSize > spec.maxLot) {
+    warnings.push(`Position size ${positionSize} exceeds maximum ${spec.maxLot} lots.`);
+  }
 
   const potentialLoss = positionSize * pipValuePerLot * stopPips;
   const potentialProfit = positionSize * pipValuePerLot * takeProfitPips;
   const rMultiple = riskReward;
-
-  if (spec.minLot != null && positionSize > 0 && positionSize < spec.minLot) {
-    warnings.push(`Position size ${positionSize} is below minimum ${spec.minLot} lots.`);
-  }
-  if (spec.maxLot != null && positionSize > spec.maxLot) {
-    warnings.push(`Position size ${positionSize} exceeds maximum ${spec.maxLot} lots.`);
-  }
 
   return {
     riskAmount,

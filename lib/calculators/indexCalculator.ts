@@ -17,19 +17,27 @@ export function calculateIndexCfd(input: CalculatorInput, spec: InstrumentSpec):
   const riskPerLot = stopPoints * valuePerPoint;
   const lots = riskAmount / riskPerLot;
   const lotStep = spec.lotStep ?? 0.01;
-  const positionSize = Math.max(0, roundToStep(lots, lotStep));
+  let positionSize = Math.max(0, roundToStep(lots, lotStep));
+
+  if (spec.minLot != null) {
+    if (lots > 0 && lots < spec.minLot) {
+      warnings.push("Trade size below minimum lot size for this instrument");
+      if (positionSize === 0) {
+        positionSize = lots;
+      }
+    } else if (positionSize > 0 && positionSize < spec.minLot) {
+      warnings.push("Trade size below minimum lot size for this instrument");
+    }
+  }
+
+  if (spec.maxLot != null && positionSize > spec.maxLot) {
+    warnings.push(`Position size ${positionSize} exceeds maximum ${spec.maxLot} lots.`);
+  }
 
   const takeProfitPoints = takeProfitDistancePrice / pointSize;
   const potentialLoss = positionSize * riskPerLot;
   const potentialProfit = positionSize * takeProfitPoints * valuePerPoint;
   const rMultiple = riskReward;
-
-  if (spec.minLot != null && positionSize > 0 && positionSize < spec.minLot) {
-    warnings.push(`Position size ${positionSize} is below minimum ${spec.minLot} lots.`);
-  }
-  if (spec.maxLot != null && positionSize > spec.maxLot) {
-    warnings.push(`Position size ${positionSize} exceeds maximum ${spec.maxLot} lots.`);
-  }
 
   return {
     riskAmount,
