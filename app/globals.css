@@ -38,3 +38,19 @@
 .glass {
   @apply bg-card/80 backdrop-blur-md border border-border/50;
 }
+
+/* Aura Analysis (Manual) – premium dark palette */
+.aura-analysis-manual {
+  --aa-bg: #05050a;
+  --aa-bg-elevated: #070710;
+  --aa-panel: #0e0e17;
+  --aa-panel-hover: #12121f;
+  --aa-border: #1a1a2b;
+  --aa-text: #e8e8f0;
+  --aa-text-muted: #a6a6c2;
+  --aa-accent: #7b5cff;
+  --aa-accent-mid: #9b7bff;
+  --aa-accent-light: #b18cff;
+  --aa-success: #2ee6a6;
+  --aa-loss: #ff5a6a;
+}
