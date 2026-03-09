@@ -1,4 +1,3 @@
-import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { AuthProvider } from "@/components/AuthProvider";
 import { DashboardLayoutClient } from "./DashboardLayoutClient";
 

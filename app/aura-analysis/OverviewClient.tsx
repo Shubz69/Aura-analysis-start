@@ -17,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, BarChart3, AlertCircle } from "lucide-react";
+import { BarChart3, AlertCircle } from "lucide-react";
 import { formatCurrencySafe, formatPercentSafe, formatRSafe, formatDate } from "@/lib/utils";
 import { TradingCalendar, type CalendarTrade } from "@/components/dashboard/TradingCalendar";
 import { TradeStatusBadge } from "@/components/trades/TradeStatusBadge";
@@ -166,26 +166,20 @@ export function OverviewClient({
         </div>
       )}
       {isDemo && (
-        <div className="flex items-center gap-3 rounded-xl border border-primary/40 bg-primary/10 px-4 py-3 text-sm text-foreground">
-          <BarChart3 className="h-5 w-5 shrink-0 text-primary" />
-          <span>Showing sample data. Add trades to see your real performance.</span>
-          <Button asChild size="sm" className="ml-auto shrink-0">
+        <div
+          className="flex flex-col gap-3 rounded-xl border px-4 py-3 text-sm sm:flex-row sm:items-center"
+          style={{ borderColor: "var(--aa-border-glow)", background: "rgba(123, 92, 255, 0.08)", color: "var(--aa-text)" }}
+        >
+          <BarChart3 className="h-5 w-5 shrink-0" style={{ color: "var(--aa-accent)" }} />
+          <span className="flex-1">Showing sample data. Add trades to see your real performance.</span>
+          <Button asChild size="sm" className="shrink-0" style={{ background: "var(--aa-accent)", color: "#fff" }}>
             <Link href="/aura-analysis/calculator">Add trade</Link>
           </Button>
         </div>
       )}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">Overview</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Your trading performance at a glance</p>
-        </div>
-        <Button asChild className="w-full sm:w-auto shadow-sm">
-          <Link href="/aura-analysis/calculator">
-            <Plus className="mr-2 h-4 w-4" />
-            Quick add trade
-          </Link>
-        </Button>
-      </div>
+      <p className="text-sm" style={{ color: "var(--aa-text-muted)" }}>
+        Your trading performance at a glance
+      </p>
 
       <motion.div variants={item} className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <KPICard title="Total Trades" value={displayKpis.totalTrades} />

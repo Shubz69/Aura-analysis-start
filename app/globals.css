@@ -39,13 +39,17 @@
   @apply bg-card/80 backdrop-blur-md border border-border/50;
 }
 
-/* Aura Analysis (Manual) – premium dark palette */
-.aura-analysis-manual {
+/* Aura FX / Aura Analysis – premium dark palette (main shell + manual) */
+.aura-analysis-manual,
+.aura-analysis-shell {
   --aa-bg: #05050a;
   --aa-bg-elevated: #070710;
+  --aa-bg-deep: #0b0b12;
   --aa-panel: #0e0e17;
   --aa-panel-hover: #12121f;
+  --aa-panel-soft: #151525;
   --aa-border: #1a1a2b;
+  --aa-border-glow: rgba(155, 123, 255, 0.15);
   --aa-text: #e8e8f0;
   --aa-text-muted: #a6a6c2;
   --aa-accent: #7b5cff;
@@ -53,4 +57,35 @@
   --aa-accent-light: #b18cff;
   --aa-success: #2ee6a6;
   --aa-loss: #ff5a6a;
+}
+
+/* Aura Analysis shell: content area uses premium panels and text colors */
+.aura-analysis-shell main {
+  color: var(--aa-text);
+}
+.aura-analysis-shell .text-muted-foreground {
+  color: var(--aa-text-muted) !important;
+}
+.aura-analysis-shell .text-foreground {
+  color: var(--aa-text) !important;
+}
+.aura-analysis-shell .text-emerald-500,
+.aura-analysis-shell .text-emerald-600 {
+  color: var(--aa-success) !important;
+}
+.aura-analysis-shell .dark .text-emerald-400 {
+  color: var(--aa-success) !important;
+}
+.aura-analysis-shell .text-red-500,
+.aura-analysis-shell .text-red-600 {
+  color: var(--aa-loss) !important;
+}
+.aura-analysis-shell .dark .text-red-400 {
+  color: var(--aa-loss) !important;
+}
+.aura-analysis-shell .bg-card {
+  background: var(--aa-panel) !important;
+}
+.aura-analysis-shell .border-border {
+  border-color: var(--aa-border) !important;
 }

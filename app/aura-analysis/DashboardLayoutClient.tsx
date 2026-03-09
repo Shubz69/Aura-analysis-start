@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/components/AuthProvider";
-import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import { AuraAnalysisShell } from "@/components/aura-analysis/AuraAnalysisShell";
 
 export function DashboardLayoutClient({
   children,
@@ -12,15 +12,18 @@ export function DashboardLayoutClient({
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-muted-foreground">Checking session...</p>
+      <div
+        className="min-h-screen flex items-center justify-center aura-analysis-shell"
+        style={{ background: "var(--aa-bg)" }}
+      >
+        <p style={{ color: "var(--aa-text-muted)" }}>Checking session...</p>
       </div>
     );
   }
 
   return (
-    <DashboardShell userEmail={user?.email ?? null}>
+    <AuraAnalysisShell userEmail={user?.email ?? null}>
       {children}
-    </DashboardShell>
+    </AuraAnalysisShell>
   );
 }
