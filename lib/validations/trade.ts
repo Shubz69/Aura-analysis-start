@@ -1,7 +1,5 @@
 import { z } from "zod";
 
-const MAX_RISK_PERCENT = 5;
-
 export const tradeCalculatorSchema = z.object({
   pair: z.string().min(1, "Pair is required"),
   direction: z.enum(["buy", "sell"]),
@@ -9,7 +7,7 @@ export const tradeCalculatorSchema = z.object({
   riskPercent: z.coerce
     .number()
     .min(0.01, "Risk must be greater than 0")
-    .max(MAX_RISK_PERCENT, `Risk must be at most ${MAX_RISK_PERCENT}%`),
+    .max(100, "Risk must be at most 100%"),
   entryPrice: z.coerce.number().positive("Entry must be positive"),
   stopLoss: z.coerce.number().positive("Stop loss must be positive"),
   takeProfit: z.coerce.number().positive("Take profit must be positive"),

@@ -242,11 +242,32 @@ export function TradeCalculatorForm({
                 id="riskPercent"
                 type="number"
                 step="0.1"
+                min={0}
                 {...form.register("riskPercent")}
               />
               {form.formState.errors.riskPercent && (
                 <p className="text-xs text-destructive">{form.formState.errors.riskPercent.message}</p>
               )}
+              {!form.formState.errors.riskPercent && (() => {
+                const r = Number(watchValues.riskPercent) || 0;
+                if (r >= 10) {
+                  return (
+                    <p className="text-xs text-amber-500 flex items-center gap-1.5 mt-1">
+                      <span aria-hidden>⚠</span>
+                      Extreme risk: Risking 10%+ per trade can quickly wipe out an account during losing streaks.
+                    </p>
+                  );
+                }
+                if (r > 5) {
+                  return (
+                    <p className="text-xs text-amber-600 dark:text-amber-500 flex items-center gap-1.5 mt-1">
+                      <span aria-hidden>⚠</span>
+                      High risk: Most professional traders risk 1–2% per trade. Risk above 5% significantly increases account drawdown.
+                    </p>
+                  );
+                }
+                return null;
+              })()}
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
