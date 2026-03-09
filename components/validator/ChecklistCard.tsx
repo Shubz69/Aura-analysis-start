@@ -76,6 +76,7 @@ function ReferenceImage({ src, alt }: { src: string; alt: string }) {
         fill
         className="object-cover"
         sizes="(max-width: 400px) 100vw, 340px"
+        unoptimized
         onError={(e) => {
           const target = e.currentTarget;
           target.style.display = "none";
