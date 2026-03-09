@@ -6,6 +6,7 @@
 import { getInstrumentOrFallback } from "@/lib/instruments";
 import { calcClosedTradePnL } from "./closedTradePnL";
 import { calculateRisk } from "./calculateRisk";
+import { validateTradeInput } from "./validateTradeInput";
 import type { CalculatorResult } from "./types";
 import type { InstrumentSpec } from "@/lib/instruments";
 
@@ -59,8 +60,36 @@ export function calculateFromFixedSize(
   input: FixedSizeInput
 ): CalculatorResult {
   const spec = getInstrumentOrFallback(symbol);
-  const warnings: string[] = [];
+  const validation = validateTradeInput({
+    symbol,
+    accountBalance: input.accountBalance,
+    entry: input.entry,
+    stop: input.stop,
+    takeProfit: input.takeProfit,
+    direction: input.direction,
+    positionSize: input.positionSize,
+  });
+  if (!validation.valid) {
+    const stopDistancePrice = Math.abs(input.entry - input.stop);
+    const takeProfitDistancePrice = Math.abs(input.takeProfit - input.entry);
+    return {
+      riskAmount: 0,
+      stopDistancePrice,
+      takeProfitDistancePrice,
+      stopDistanceAlt: undefined,
+      takeProfitDistanceAlt: undefined,
+      altUnitLabel: getAltUnitLabel(spec),
+      riskReward: stopDistancePrice > 0 ? takeProfitDistancePrice / stopDistancePrice : 0,
+      positionSize: input.positionSize <= 0 ? 0 : input.positionSize,
+      positionUnitLabel: getPositionUnitLabel(spec),
+      potentialProfit: 0,
+      potentialLoss: 0,
+      rMultiple: 0,
+      warnings: validation.errors,
+    };
+  }
 
+  const warnings: string[] = [];
   const stopDistancePrice = Math.abs(input.entry - input.stop);
   const takeProfitDistancePrice = Math.abs(input.takeProfit - input.entry);
 

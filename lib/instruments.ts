@@ -41,6 +41,9 @@ export interface InstrumentSpec {
   calculationMode: CalculationMode;
   /** Futures: whole contracts only. */
   wholeContractsOnly?: boolean;
+  /** Reject prices outside this range (e.g. GBPUSD 0.5–3.0, not 10265). */
+  minReasonablePrice?: number;
+  maxReasonablePrice?: number;
 }
 
 function spec(
@@ -74,6 +77,8 @@ const INSTRUMENTS: InstrumentSpec[] = [
     lotStep: 0.01,
     minLot: 0.01,
     maxLot: 100,
+    minReasonablePrice: 0.5,
+    maxReasonablePrice: 3,
   }),
   spec("GBPUSD", "GBP/USD", "forex", "forex", {
     contractSize: 100_000,
@@ -84,6 +89,8 @@ const INSTRUMENTS: InstrumentSpec[] = [
     lotStep: 0.01,
     minLot: 0.01,
     maxLot: 100,
+    minReasonablePrice: 0.5,
+    maxReasonablePrice: 3,
   }),
   spec("USDJPY", "USD/JPY", "forex", "forex", {
     contractSize: 100_000,
@@ -94,6 +101,8 @@ const INSTRUMENTS: InstrumentSpec[] = [
     lotStep: 0.01,
     minLot: 0.01,
     maxLot: 100,
+    minReasonablePrice: 50,
+    maxReasonablePrice: 250,
   }),
   spec("USDCHF", "USD/CHF", "forex", "forex", {
     contractSize: 100_000,
@@ -104,6 +113,8 @@ const INSTRUMENTS: InstrumentSpec[] = [
     lotStep: 0.01,
     minLot: 0.01,
     maxLot: 100,
+    minReasonablePrice: 0.5,
+    maxReasonablePrice: 2,
   }),
   spec("AUDUSD", "AUD/USD", "forex", "forex", {
     contractSize: 100_000,
@@ -114,6 +125,8 @@ const INSTRUMENTS: InstrumentSpec[] = [
     lotStep: 0.01,
     minLot: 0.01,
     maxLot: 100,
+    minReasonablePrice: 0.5,
+    maxReasonablePrice: 2,
   }),
   spec("USDCAD", "USD/CAD", "forex", "forex", {
     contractSize: 100_000,
@@ -124,6 +137,32 @@ const INSTRUMENTS: InstrumentSpec[] = [
     lotStep: 0.01,
     minLot: 0.01,
     maxLot: 100,
+    minReasonablePrice: 0.5,
+    maxReasonablePrice: 2,
+  }),
+  spec("EURJPY", "EUR/JPY", "forex", "forex", {
+    contractSize: 100_000,
+    pipSize: 0.01,
+    tickSize: 0.001,
+    pricePrecision: 3,
+    quoteCurrency: "JPY",
+    lotStep: 0.01,
+    minLot: 0.01,
+    maxLot: 100,
+    minReasonablePrice: 100,
+    maxReasonablePrice: 250,
+  }),
+  spec("GBPJPY", "GBP/JPY", "forex", "forex", {
+    contractSize: 100_000,
+    pipSize: 0.01,
+    tickSize: 0.001,
+    pricePrecision: 3,
+    quoteCurrency: "JPY",
+    lotStep: 0.01,
+    minLot: 0.01,
+    maxLot: 100,
+    minReasonablePrice: 150,
+    maxReasonablePrice: 250,
   }),
 
   // ─── COMMODITIES ───────────────────────────────────────────────────────
@@ -136,6 +175,8 @@ const INSTRUMENTS: InstrumentSpec[] = [
     lotStep: 0.01,
     minLot: 0.01,
     maxLot: 100,
+    minReasonablePrice: 500,
+    maxReasonablePrice: 10000,
   }),
   spec("XAGUSD", "XAG/USD (Silver)", "commodity", "commodity", {
     contractSize: 5000,
@@ -146,6 +187,8 @@ const INSTRUMENTS: InstrumentSpec[] = [
     lotStep: 0.01,
     minLot: 0.01,
     maxLot: 100,
+    minReasonablePrice: 10,
+    maxReasonablePrice: 100,
   }),
   spec("XTIUSD", "WTI Crude Oil (USOIL)", "commodity", "commodity", {
     contractSize: 1000,
@@ -155,6 +198,8 @@ const INSTRUMENTS: InstrumentSpec[] = [
     lotStep: 0.01,
     minLot: 0.01,
     maxLot: 100,
+    minReasonablePrice: 20,
+    maxReasonablePrice: 200,
   }),
   spec("XBRUSD", "Brent Crude Oil (UKOIL)", "commodity", "commodity", {
     contractSize: 1000,
@@ -164,6 +209,8 @@ const INSTRUMENTS: InstrumentSpec[] = [
     lotStep: 0.01,
     minLot: 0.01,
     maxLot: 100,
+    minReasonablePrice: 20,
+    maxReasonablePrice: 200,
   }),
 
   // ─── INDICES (CFD) ─────────────────────────────────────────────────────
@@ -177,6 +224,8 @@ const INSTRUMENTS: InstrumentSpec[] = [
     lotStep: 0.01,
     minLot: 0.01,
     maxLot: 100,
+    minReasonablePrice: 10000,
+    maxReasonablePrice: 50000,
   }),
   spec("NAS100", "NAS100 (Nasdaq)", "index", "index_cfd", {
     contractSize: 1,
@@ -188,6 +237,8 @@ const INSTRUMENTS: InstrumentSpec[] = [
     lotStep: 0.01,
     minLot: 0.01,
     maxLot: 100,
+    minReasonablePrice: 5000,
+    maxReasonablePrice: 25000,
   }),
   spec("SPX500", "SPX500 (S&P 500)", "index", "index_cfd", {
     contractSize: 1,
@@ -199,6 +250,8 @@ const INSTRUMENTS: InstrumentSpec[] = [
     lotStep: 0.01,
     minLot: 0.01,
     maxLot: 100,
+    minReasonablePrice: 2000,
+    maxReasonablePrice: 7000,
   }),
   spec("GER40", "GER40 (DAX)", "index", "index_cfd", {
     contractSize: 1,
@@ -210,6 +263,8 @@ const INSTRUMENTS: InstrumentSpec[] = [
     lotStep: 0.01,
     minLot: 0.01,
     maxLot: 100,
+    minReasonablePrice: 5000,
+    maxReasonablePrice: 20000,
   }),
 
   // ─── STOCKS ─────────────────────────────────────────────────────────────
@@ -218,18 +273,24 @@ const INSTRUMENTS: InstrumentSpec[] = [
     tickSize: 0.01,
     pricePrecision: 2,
     quoteCurrency: "USD",
+    minReasonablePrice: 50,
+    maxReasonablePrice: 500,
   }),
   spec("TSLA", "Tesla", "stock", "stock_share", {
     contractSize: 1,
     tickSize: 0.01,
     pricePrecision: 2,
     quoteCurrency: "USD",
+    minReasonablePrice: 50,
+    maxReasonablePrice: 1000,
   }),
   spec("NVDA", "NVIDIA", "stock", "stock_share", {
     contractSize: 1,
     tickSize: 0.01,
     pricePrecision: 2,
     quoteCurrency: "USD",
+    minReasonablePrice: 50,
+    maxReasonablePrice: 2000,
   }),
 
   // ─── FUTURES ───────────────────────────────────────────────────────────
@@ -240,6 +301,8 @@ const INSTRUMENTS: InstrumentSpec[] = [
     pricePrecision: 2,
     quoteCurrency: "USD",
     wholeContractsOnly: true,
+    minReasonablePrice: 2000,
+    maxReasonablePrice: 7000,
   }),
   spec("NQ", "E-mini Nasdaq", "future", "future_contract", {
     contractSize: 20,
@@ -248,6 +311,8 @@ const INSTRUMENTS: InstrumentSpec[] = [
     pricePrecision: 2,
     quoteCurrency: "USD",
     wholeContractsOnly: true,
+    minReasonablePrice: 5000,
+    maxReasonablePrice: 25000,
   }),
   spec("GC", "Gold", "future", "future_contract", {
     contractSize: 100,
@@ -256,6 +321,8 @@ const INSTRUMENTS: InstrumentSpec[] = [
     pricePrecision: 2,
     quoteCurrency: "USD",
     wholeContractsOnly: true,
+    minReasonablePrice: 500,
+    maxReasonablePrice: 10000,
   }),
   spec("CL", "Crude Oil WTI", "future", "future_contract", {
     contractSize: 1000,
@@ -264,6 +331,8 @@ const INSTRUMENTS: InstrumentSpec[] = [
     pricePrecision: 2,
     quoteCurrency: "USD",
     wholeContractsOnly: true,
+    minReasonablePrice: 20,
+    maxReasonablePrice: 200,
   }),
   spec("MGC", "Micro Gold", "future", "future_contract", {
     contractSize: 10,
@@ -272,6 +341,8 @@ const INSTRUMENTS: InstrumentSpec[] = [
     pricePrecision: 2,
     quoteCurrency: "USD",
     wholeContractsOnly: true,
+    minReasonablePrice: 500,
+    maxReasonablePrice: 10000,
   }),
   spec("MNQ", "Micro E-mini Nasdaq", "future", "future_contract", {
     contractSize: 2,
@@ -280,6 +351,8 @@ const INSTRUMENTS: InstrumentSpec[] = [
     pricePrecision: 2,
     quoteCurrency: "USD",
     wholeContractsOnly: true,
+    minReasonablePrice: 5000,
+    maxReasonablePrice: 25000,
   }),
 
   // ─── CRYPTO (unit-based spot style) ────────────────────────────────────
@@ -288,12 +361,16 @@ const INSTRUMENTS: InstrumentSpec[] = [
     tickSize: 0.01,
     pricePrecision: 2,
     quoteCurrency: "USD",
+    minReasonablePrice: 1000,
+    maxReasonablePrice: 200000,
   }),
   spec("ETHUSD", "ETH/USD", "crypto", "crypto_units", {
     contractSize: 1,
     tickSize: 0.01,
     pricePrecision: 2,
     quoteCurrency: "USD",
+    minReasonablePrice: 100,
+    maxReasonablePrice: 20000,
   }),
 ];
 
@@ -318,6 +395,8 @@ export function getInstrumentOrFallback(symbol: string): InstrumentSpec {
       lotStep: 0.01,
       minLot: 0.01,
       maxLot: 100,
+      minReasonablePrice: 50,
+      maxReasonablePrice: 250,
     });
   }
   if (upper.includes("XAU") || upper.includes("GOLD")) {
@@ -330,6 +409,8 @@ export function getInstrumentOrFallback(symbol: string): InstrumentSpec {
       lotStep: 0.01,
       minLot: 0.01,
       maxLot: 100,
+      minReasonablePrice: 500,
+      maxReasonablePrice: 10000,
     });
   }
   if (["US30", "NAS100", "SPX500", "GER40"].some((s) => upper.includes(s))) {
@@ -343,6 +424,8 @@ export function getInstrumentOrFallback(symbol: string): InstrumentSpec {
       lotStep: 0.01,
       minLot: 0.01,
       maxLot: 100,
+      minReasonablePrice: 1000,
+      maxReasonablePrice: 50000,
     });
   }
   if (["BTC", "ETH"].some((s) => upper.includes(s))) {
@@ -351,6 +434,8 @@ export function getInstrumentOrFallback(symbol: string): InstrumentSpec {
       tickSize: 0.01,
       pricePrecision: 2,
       quoteCurrency: "USD",
+      minReasonablePrice: 100,
+      maxReasonablePrice: 200000,
     });
   }
   return spec(upper, symbol, "forex", "forex", {
@@ -362,6 +447,8 @@ export function getInstrumentOrFallback(symbol: string): InstrumentSpec {
     lotStep: 0.01,
     minLot: 0.01,
     maxLot: 100,
+    minReasonablePrice: 0.5,
+    maxReasonablePrice: 3,
   });
 }
 

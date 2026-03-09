@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { tradeCalculatorSchema, type TradeCalculatorForm as TradeCalculatorFormValues } from "@/lib/validations/trade";
 import { suggestPositionSize, calculateFromFixedSize } from "@/lib/calculators/fixedSizeCalculator";
+import { validateTradeInput } from "@/lib/calculators/validateTradeInput";
 import { getInstrumentOrFallback } from "@/lib/instruments";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -67,6 +68,8 @@ export interface ComputedValues {
   /** When position size is 0, suggested size from risk % (for "Suggest size" button). */
   suggestedPositionSize?: number;
   suggestedPositionUnitLabel?: "lots" | "shares" | "contracts" | "units";
+  /** True when inputs failed instrument/structural validation (do not save). */
+  hasValidationError?: boolean;
 }
 
 const NO_CHECKLIST_PAYLOAD: ChecklistSavePayload = {
@@ -151,6 +154,39 @@ export function TradeCalculatorForm({
   const computed = useMemo((): ComputedValues | null => {
     if (!entry || !stop || !tp || balance <= 0) return null;
     const positionSizeNum = positionSizeForm;
+    const validation = validateTradeInput({
+      symbol: pair,
+      accountBalance: balance,
+      entry,
+      stop,
+      takeProfit: tp,
+      direction,
+      positionSize: positionSizeNum > 0 ? positionSizeNum : undefined,
+    });
+    if (!validation.valid) {
+      const stopDist = Math.abs(entry - stop);
+      const tpDist = Math.abs(tp - entry);
+      return {
+        riskAmount: 0,
+        stopDistancePrice: stopDist,
+        takeProfitDistancePrice: tpDist,
+        riskReward: stopDist > 0 ? tpDist / stopDist : 0,
+        positionSize: positionSizeNum,
+        positionUnitLabel: positionSizeUnitLabel,
+        potentialProfit: 0,
+        potentialLoss: 0,
+        rMultiple: 0,
+        stopLossPips: stopDist,
+        takeProfitPips: tpDist,
+        rr: stopDist > 0 ? tpDist / stopDist : 0,
+        checklistScore: 0,
+        checklistTotal: 0,
+        checklistPercent: 0,
+        tradeGrade: "—",
+        warnings: validation.errors,
+        hasValidationError: true,
+      };
+    }
     // Once position size is set, treat as a real placed trade: TP/SL only affect P/L against this fixed size (no resizing).
     if (positionSizeNum > 0) {
       const result = calculateFromFixedSize(pair, {
@@ -214,7 +250,7 @@ export function TradeCalculatorForm({
       suggestedPositionSize: suggested?.suggestedPositionSize,
       suggestedPositionUnitLabel: suggested?.positionUnitLabel,
     };
-  }, [entry, stop, tp, balance, riskPercent, pair, direction, positionSizeForm]);
+  }, [entry, stop, tp, balance, riskPercent, pair, direction, positionSizeForm, positionSizeUnitLabel]);
 
   useEffect(() => {
     form.setValue("direction", direction);
@@ -426,7 +462,7 @@ export function TradeCalculatorForm({
 
       {onSave && (
         <div className="pt-2">
-          <Button type="submit" disabled={!computed || saving || positionSizeForm <= 0} className="min-w-[8rem]">
+          <Button type="submit" disabled={!computed || saving || positionSizeForm <= 0 || computed.hasValidationError} className="min-w-[8rem]">
             {saving ? "Saving…" : "Save trade"}
           </Button>
         </div>
