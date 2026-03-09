@@ -9,6 +9,8 @@
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
+    "validate:mandatory": "npx tsx lib/calculators/run-mandatory-validation.ts",
+    "cleanup-summary": "npx tsx scripts/cleanup-summary.ts",
     "db:seed": "echo 'Use main app DB for data.'"
   },
   "dependencies": {

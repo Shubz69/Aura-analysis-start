@@ -68,14 +68,14 @@ Open [http://localhost:3000](http://localhost:3000). **Sign in on the main Aura 
 
 - **`app/`** — App Router pages (dashboard, auth callback, dashboard sub-routes). `/login` and `/signup` redirect to the main site.
 - **`components/`** — UI and dashboard components (`ui/`, `dashboard/`, `charts/`, `forms/`, `trades/`), including `AuthProvider` for JWT bootstrap.
-- **`lib/`** — Utilities: `trade-calculations.ts`, `analytics/`, `auth.js`, `db.js`, `validations/`.
+- **`lib/`** — Utilities: `calculators/` (risk engine), `instruments.ts`, `analytics/`, `auth.js`, `db.js`, `validations/`.
 - **`types/`** — Shared TypeScript types.
 - **`hooks/`** — React hooks (e.g. `useProfile`).
 - **`app/api/aura-analysis/`** — API routes (`me`, etc.) using MySQL + JWT auth.
 
 ## Key files to review
 
-1. **`lib/trade-calculations.ts`** — Pip/point logic, position size, PnL, R-multiple, grades.
+1. **`lib/calculators/`** — Risk calculation engine: `calculateRisk`, instrument-based (forex, commodity, index, stock, futures, crypto); closed-trade PnL in `closedTradePnL.ts`.
 2. **`lib/analytics/metrics.ts`** — Win rate, profit factor, drawdown, streaks, consistency.
 3. **`lib/validations/trade.ts`** — Zod schemas for calculator and trade result.
 4. **`lib/auth.js`** / **`app/api/aura-analysis/me/route.ts`** — JWT validation and current user from existing DB.
@@ -83,14 +83,14 @@ Open [http://localhost:3000](http://localhost:3000). **Sign in on the main Aura 
 
 ## Calculator asset support
 
-The trade calculator and `lib/trade-calculations.ts` support:
+The trade calculator uses **`lib/calculators/`** and **`lib/instruments.ts`** (single source of truth):
 
-- **Forex majors & minors:** Pip multiplier 10000 (or 100 for JPY pairs).
-- **Commodities / metals / energy:** XAU (10), XAG (100), XTI, XBR, NATGAS (100).
-- **Indices:** US30, NAS100, SPX500, GER40, UK100, FRA40, EU50, JP225, HK50, AUS200 (multiplier 1).
-- **Crypto:** BTCUSD, ETHUSD, SOLUSD (multiplier 1).
+- **Forex:** Pips, lot size, JPY handling.
+- **Commodities / metals / energy:** XAUUSD, XAGUSD, XTIUSD, XBRUSD (contract size, points).
+- **Indices:** US30, NAS100, SPX500, GER40 (value per point per lot).
+- **Stocks, futures, crypto:** Shares, contracts, units per instrument spec.
 
-Unknown symbols fall back to pattern-based defaults. Asset data can be loaded from the main app API or seeded in MySQL.
+Unknown symbols use fallbacks from `lib/instruments.ts`. Asset list for the dropdown comes from `lib/config/auraAnalysisAssets.ts` or the DB.
 
 ## Testing
 
@@ -108,5 +108,5 @@ npm run test
 ## Extending
 
 - **Trades / profile data:** Wire dashboard pages to your existing API (e.g. `/api/aura-analysis/trades`) using the same JWT and `lib/auth.js`.
-- **MT5/API sync:** Add API routes that use `lib/trade-calculations` and insert/update trades in your DB.
+- **MT5/API sync:** Add API routes that use `lib/calculators/calculateRisk` and `lib/calculators/closedTradePnL` and insert/update trades in your DB.
 - **Leaderboard / checklist:** Load from your MySQL or API; admin UI can use role from `/api/aura-analysis/me`.

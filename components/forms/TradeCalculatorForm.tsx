@@ -4,15 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { tradeCalculatorSchema, type TradeCalculatorForm as TradeCalculatorFormValues } from "@/lib/validations/trade";
-import {
-  calcRiskAmount,
-  calcStopLossDistance,
-  calcTakeProfitDistance,
-  calcRR,
-  calcPositionSize,
-  calcPotentialProfit,
-  calcPotentialLoss,
-} from "@/lib/trade-calculations";
+import { calculateRisk } from "@/lib/calculators/calculateRisk";
+import { getInstrumentOrFallback } from "@/lib/instruments";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,8 +17,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { formatCurrencySafe, formatRR, formatDistance, formatPositionSize, getPositionSizeKind } from "@/lib/utils";
-import { getAssetMetadata, ASSET_CLASS_ORDER, ASSET_CLASS_LABELS } from "@/lib/config/auraAnalysisAssets";
+import { formatCurrencySafe, formatRR, formatDistance, formatPositionSize } from "@/lib/utils";
+import { ASSET_CLASS_ORDER, ASSET_CLASS_LABELS } from "@/lib/config/auraAnalysisAssets";
+import { getAssetMetadata } from "@/lib/config/auraAnalysisAssets";
 import { getEntryPlaceholder, getStopPlaceholder, getTpPlaceholder } from "@/lib/config/assetExamples";
 import { PairSelect } from "@/components/calculator/PairSelect";
 import type { Asset } from "@/types";
@@ -48,17 +42,25 @@ export interface ChecklistSavePayload {
 
 export interface ComputedValues {
   riskAmount: number;
-  stopLossPips: number;
-  takeProfitPips: number;
-  rr: number;
+  stopDistancePrice: number;
+  takeProfitDistancePrice: number;
+  stopDistanceAlt?: number;
+  takeProfitDistanceAlt?: number;
+  altUnitLabel?: "pips" | "points" | "ticks";
+  riskReward: number;
   positionSize: number;
+  positionUnitLabel: "lots" | "shares" | "contracts" | "units";
   potentialProfit: number;
   potentialLoss: number;
   rMultiple: number;
+  stopLossPips: number;
+  takeProfitPips: number;
+  rr: number;
   checklistScore: number;
   checklistTotal: number;
   checklistPercent: number;
   tradeGrade: string;
+  warnings: string[];
 }
 
 const NO_CHECKLIST_PAYLOAD: ChecklistSavePayload = {
@@ -68,8 +70,6 @@ const NO_CHECKLIST_PAYLOAD: ChecklistSavePayload = {
   tradeGrade: "—",
   checklistItems: [],
 };
-
-const MIN_CHECKLIST_WARNING_PERCENT = 60;
 
 export function TradeCalculatorForm({
   assets,
@@ -102,25 +102,8 @@ export function TradeCalculatorForm({
   const stop = watchValues.stopLoss || 0;
   const tp = watchValues.takeProfit || 0;
 
-  const assetMeta = useMemo(() => assets.find((a) => a.symbol === pair), [assets, pair]);
   const assetConfig = useMemo(() => getAssetMetadata(pair), [pair]);
-  const registryMeta = useMemo(
-    () =>
-      assetMeta
-        ? {
-            pip_multiplier: assetMeta.pip_multiplier,
-            pip_value_hint: assetMeta.pip_value_hint ?? undefined,
-            contract_size_hint: assetMeta.contract_size_hint ?? undefined,
-            quote_type: assetMeta.quote_type ?? undefined,
-          }
-        : {
-            pip_multiplier: assetConfig.pipMultiplier,
-            pip_value_hint: assetConfig.pipValueHint ?? undefined,
-            contract_size_hint: assetConfig.contractSizeHint ?? undefined,
-            quote_type: assetConfig.quoteType ?? undefined,
-          },
-    [assetMeta, assetConfig]
-  );
+  const instrumentSpec = useMemo(() => getInstrumentOrFallback(pair), [pair]);
 
   const pairOptions = useMemo(
     () => assets.filter((a) => a.is_active).map((a) => ({ symbol: a.symbol, displayName: a.display_name })),
@@ -149,37 +132,39 @@ export function TradeCalculatorForm({
 
   const computed = useMemo((): ComputedValues | null => {
     if (!entry || !stop || !tp || balance <= 0 || riskPercent <= 0) return null;
-    if (stop === entry || tp === entry) return null;
-    const riskAmount = calcRiskAmount(balance, riskPercent);
-    const stopLossPips = calcStopLossDistance(entry, stop, pair, registryMeta);
-    const takeProfitPips = calcTakeProfitDistance(entry, tp, pair, registryMeta);
-    const rr = calcRR(entry, stop, tp);
-    const positionSize = calcPositionSize({
-      balance,
+    const result = calculateRisk(pair, {
+      accountBalance: balance,
       riskPercent,
       entry,
       stop,
-      symbol: pair,
-      registryMeta,
+      takeProfit: tp,
+      direction,
     });
-    const potentialProfit = calcPotentialProfit(entry, tp, positionSize, pair, registryMeta);
-    const potentialLoss = calcPotentialLoss(entry, stop, positionSize, pair, registryMeta);
-    const rMultiple = riskAmount > 0 ? potentialProfit / riskAmount : 0;
+    const stopLossPips = result.stopDistanceAlt ?? result.stopDistancePrice;
+    const takeProfitPips = result.takeProfitDistanceAlt ?? result.takeProfitDistancePrice;
     return {
-      riskAmount,
+      riskAmount: result.riskAmount,
+      stopDistancePrice: result.stopDistancePrice,
+      takeProfitDistancePrice: result.takeProfitDistancePrice,
+      stopDistanceAlt: result.stopDistanceAlt,
+      takeProfitDistanceAlt: result.takeProfitDistanceAlt,
+      altUnitLabel: result.altUnitLabel,
+      riskReward: result.riskReward,
+      positionSize: result.positionSize,
+      positionUnitLabel: result.positionUnitLabel,
+      potentialProfit: result.potentialProfit,
+      potentialLoss: result.potentialLoss,
+      rMultiple: result.rMultiple,
       stopLossPips,
       takeProfitPips,
-      rr,
-      positionSize,
-      potentialProfit,
-      potentialLoss,
-      rMultiple,
+      rr: result.riskReward,
       checklistScore: 0,
       checklistTotal: 0,
       checklistPercent: 0,
       tradeGrade: "—",
+      warnings: result.warnings,
     };
-  }, [entry, stop, tp, balance, riskPercent, pair, registryMeta]);
+  }, [entry, stop, tp, balance, riskPercent, pair, direction]);
 
   useEffect(() => {
     form.setValue("direction", direction);
@@ -344,13 +329,26 @@ export function TradeCalculatorForm({
             ) : (
               <>
                 <Row label="Risk amount" value={formatCurrencySafe(computed.riskAmount)} />
-                <Row label={`Stop loss (${assetConfig.distanceType === "pip" ? "pips" : assetConfig.distanceType === "point" ? "pts" : "units"})`} value={formatDistance(computed.stopLossPips, assetConfig.distanceType, 1)} />
-                <Row label={`Take profit (${assetConfig.distanceType === "pip" ? "pips" : assetConfig.distanceType === "point" ? "pts" : "units"})`} value={formatDistance(computed.takeProfitPips, assetConfig.distanceType, 1)} />
-                <Row label="Risk:reward" value={formatRR(computed.rr)} />
-                <Row label={`Position size (${getPositionSizeKind(assetConfig.assetClass)})`} value={formatPositionSize(computed.positionSize, getPositionSizeKind(assetConfig.assetClass))} />
+                <Row label="Stop distance (price)" value={computed.stopDistancePrice.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: instrumentSpec.pricePrecision })} />
+                <Row label="Take profit distance (price)" value={computed.takeProfitDistancePrice.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: instrumentSpec.pricePrecision })} />
+                {computed.altUnitLabel != null && computed.stopDistanceAlt != null && computed.takeProfitDistanceAlt != null && (
+                  <>
+                    <Row label={`Stop distance (${computed.altUnitLabel})`} value={formatDistance(computed.stopDistanceAlt, computed.altUnitLabel === "pips" ? "pip" : computed.altUnitLabel === "ticks" ? "ticks" : "point", 2)} />
+                    <Row label={`Take profit distance (${computed.altUnitLabel})`} value={formatDistance(computed.takeProfitDistanceAlt, computed.altUnitLabel === "pips" ? "pip" : computed.altUnitLabel === "ticks" ? "ticks" : "point", 2)} />
+                  </>
+                )}
+                <Row label="Risk:Reward" value={formatRR(computed.riskReward)} />
+                <Row label={`Position size (${computed.positionUnitLabel})`} value={formatPositionSize(computed.positionSize, computed.positionUnitLabel)} />
                 <Row label="Potential profit" value={formatCurrencySafe(computed.potentialProfit)} className="text-emerald-500" />
                 <Row label="Potential loss" value={formatCurrencySafe(computed.potentialLoss)} className="text-red-500" />
                 <Row label="R multiple (if TP hit)" value={formatRR(computed.rMultiple)} />
+                {computed.warnings.length > 0 && (
+                  <div className="mt-3 rounded-md border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
+                    {computed.warnings.map((w, i) => (
+                      <p key={i}>{w}</p>
+                    ))}
+                  </div>
+                )}
               </>
             )}
           </CardContent>

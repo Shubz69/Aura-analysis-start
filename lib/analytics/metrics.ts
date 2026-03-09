@@ -1,7 +1,32 @@
 import type { Trade, TradeResult } from "@/types";
-import { calcConsistencyScore } from "@/lib/trade-calculations";
 
 const RESOLVED_RESULTS: TradeResult[] = ["win", "loss", "breakeven"];
+
+/** Legacy consistency score: checklist quality, risk discipline, R volatility. 0–100. */
+function legacyConsistencyScoreFromResolved(
+  resolved: { result: string; r_multiple?: number; risk_percent?: number; checklist_percent?: number }[]
+): number {
+  if (resolved.length < 2) return 0;
+  const list = resolved.filter((t) => t.result && t.result !== "open");
+  if (list.length < 2) return 0;
+  let score = 50;
+  const checklistPcts = list.map((t) => t.checklist_percent ?? 0).filter((p) => p > 0);
+  if (checklistPcts.length > 0) {
+    const avgChecklist = checklistPcts.reduce((a, b) => a + b, 0) / checklistPcts.length;
+    score += (avgChecklist - 50) / 5;
+  }
+  const riskPcts = list.map((t) => t.risk_percent ?? 0).filter((r) => r > 0);
+  if (riskPcts.length > 0) {
+    const avgRisk = riskPcts.reduce((a, b) => a + b, 0) / riskPcts.length;
+    if (avgRisk <= 2) score += 10;
+    else if (avgRisk <= 3) score += 5;
+  }
+  const rMults = list.map((t) => t.r_multiple ?? 0);
+  const mean = rMults.reduce((a, b) => a + b, 0) / rMults.length;
+  const vol = rMults.reduce((a, b) => a + b * b, 0) / rMults.length - mean * mean;
+  if (vol < 2) score += 10;
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
 
 export function getResolvedTrades(trades: Trade[]): Trade[] {
   return trades.filter((t) => RESOLVED_RESULTS.includes(t.result));
@@ -160,15 +185,15 @@ export function averageChecklistPercent(trades: Trade[]): number {
   return sum / withChecklist.length;
 }
 
-/** Legacy consistency score (trade-calculations). Use consistency.consistencyScore for the weighted 0–100 score. */
+/** Legacy consistency score. Use consistency.consistencyScore for the weighted 0–100 score. */
 export function legacyConsistencyScore(trades: Trade[]): number {
-  return calcConsistencyScore(
-    trades.map((t) => ({
+  const resolved = getResolvedTrades(trades);
+  return legacyConsistencyScoreFromResolved(
+    resolved.map((t) => ({
       result: t.result,
       r_multiple: t.r_multiple,
       risk_percent: t.risk_percent,
       checklist_percent: t.checklist_percent,
-      created_at: t.created_at,
     }))
   );
 }

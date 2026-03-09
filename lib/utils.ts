@@ -37,16 +37,17 @@ export function formatCurrencySafe(value: number, decimals = 2): string {
   return formatCurrency(v, decimals);
 }
 
-/** Distance in pips, points, or price units (asset-aware label). */
+/** Distance in pips, points, ticks, or price units (asset-aware label). */
 export function formatDistance(
   value: number,
-  unit: "pip" | "point" | "price" = "pip",
+  unit: "pip" | "point" | "ticks" | "price" = "pip",
   decimals = 1
 ): string {
   const v = safeNum(value, 0);
   const s = v.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: decimals });
   if (unit === "pip") return `${s} pips`;
   if (unit === "point") return `${s} pts`;
+  if (unit === "ticks") return `${s} ticks`;
   return s;
 }
 
@@ -56,10 +57,10 @@ export function formatRR(value: number, decimals = 2): string {
   return v.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
-/** Position size: lots / contracts / units. Uses max 2 decimals; omits decimals when whole number. */
+/** Position size: lots / contracts / units / shares. Uses max 2 decimals; omits decimals when whole number. */
 export function formatPositionSize(
   value: number,
-  kind: "lots" | "contracts" | "units" = "lots",
+  kind: "lots" | "contracts" | "units" | "shares" = "lots",
   _decimals?: number
 ): string {
   const v = safeNum(value, 0);
@@ -69,6 +70,7 @@ export function formatPositionSize(
     : v.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
   if (kind === "lots") return `${s} lots`;
   if (kind === "contracts") return `${s} contracts`;
+  if (kind === "shares") return `${s} shares`;
   return `${s} units`;
 }
 
