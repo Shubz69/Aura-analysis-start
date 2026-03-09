@@ -31,26 +31,63 @@ describe("validateTradeInput", () => {
 
 describe("calculateFromFixedSize", () => {
   describe("TEST 1: GBPUSD valid forex price", () => {
-    it("entry 1.2650, stop 1.2638, tp 1.28, 5 lots -> stopPips 12, tpPips 150, loss 600, profit 7500", () => {
+    it("entry 1.0265, stop 1.0253, tp 1.28, 5 lots -> stopPips 12, tpPips 2535, loss 600, profit 126750, R:R 211.25", () => {
       const result = calculateFromFixedSize("GBPUSD", {
         accountBalance: 10000,
-        entry: 1.265,
-        stop: 1.2638,
+        entry: 1.0265,
+        stop: 1.0253,
         takeProfit: 1.28,
         positionSize: 5,
         direction: "buy",
       });
       expect(result.stopDistancePrice).toBeCloseTo(0.0012, 6);
-      expect(result.takeProfitDistancePrice).toBeCloseTo(0.015, 6);
-      expect(result.stopDistanceAlt).toBeCloseTo(12, 1);   // 0.0012 / 0.0001 = 12 pips
-      expect(result.takeProfitDistanceAlt).toBeCloseTo(150, 1); // 0.015 / 0.0001 = 150 pips
-      expect(result.potentialLoss).toBeCloseTo(600, 0);    // 12 pips * $10/lot * 5 lots
-      expect(result.potentialProfit).toBeCloseTo(7500, 0); // 150 pips * $10/lot * 5 lots
-      expect(result.warnings).toHaveLength(0);
+      expect(result.takeProfitDistancePrice).toBeCloseTo(0.2535, 6);
+      expect(result.stopDistanceAlt).toBeCloseTo(12, 1);
+      expect(result.takeProfitDistanceAlt).toBeCloseTo(2535, 1);
+      expect(result.potentialLoss).toBeCloseTo(600, 0);
+      expect(result.potentialProfit).toBeCloseTo(126750, 0);
+      expect(result.riskReward).toBeCloseTo(211.25, 2);
+      // Sanity warnings (e.g. extreme R:R) may appear; no validation errors
+      expect(result.warnings.some((w) => w.includes("Invalid") || w.includes("reasonable"))).toBe(false);
     });
   });
 
-  describe("TEST 6: AAPL shares", () => {
+  describe("TEST 6: EURUSD standard forex", () => {
+    it("entry 1.1, stop 1.095, tp 1.11, 1 lot -> 50 pips stop, 100 pips tp, loss 500, profit 1000", () => {
+      const result = calculateFromFixedSize("EURUSD", {
+        accountBalance: 10000,
+        entry: 1.1,
+        stop: 1.095,
+        takeProfit: 1.11,
+        positionSize: 1,
+        direction: "buy",
+      });
+      expect(result.stopDistanceAlt).toBeCloseTo(50, 1);
+      expect(result.takeProfitDistanceAlt).toBeCloseTo(100, 1);
+      expect(result.potentialLoss).toBeCloseTo(500, 0);
+      expect(result.potentialProfit).toBeCloseTo(1000, 0);
+    });
+  });
+
+  describe("TEST 7: USDJPY JPY pip logic", () => {
+    it("uses correct pip size 0.01 and pip value per lot", () => {
+      const result = calculateFromFixedSize("USDJPY", {
+        accountBalance: 10000,
+        entry: 150,
+        stop: 149.5,
+        takeProfit: 151,
+        positionSize: 1,
+        direction: "buy",
+      });
+      expect(result.stopDistanceAlt).toBeCloseTo(50, 1);
+      expect(result.takeProfitDistanceAlt).toBeCloseTo(100, 1);
+      const pipValuePerLot = (100_000 * 0.01) / 150;
+      expect(result.potentialLoss).toBeCloseTo(50 * pipValuePerLot * 1, 0);
+      expect(result.potentialProfit).toBeCloseTo(100 * pipValuePerLot * 1, 0);
+    });
+  });
+
+  describe("TEST 8: AAPL shares", () => {
     it("entry 200, stop 195, tp 210, 20 shares -> loss 100, profit 200", () => {
       const result = calculateFromFixedSize("AAPL", {
         accountBalance: 10000,
@@ -65,7 +102,7 @@ describe("calculateFromFixedSize", () => {
     });
   });
 
-  describe("TEST 7: ES futures", () => {
+  describe("TEST 9: ES futures", () => {
     it("uses tick math and whole contracts", () => {
       const result = calculateFromFixedSize("ES", {
         accountBalance: 50000,
@@ -75,9 +112,23 @@ describe("calculateFromFixedSize", () => {
         positionSize: 2,
         direction: "buy",
       });
-      // 10 pts stop = 40 ticks (0.25), 20 pts tp = 80 ticks. tickValue 12.5 per contract
-      expect(result.potentialLoss).toBe(40 * 12.5 * 2); // 1000
-      expect(result.potentialProfit).toBe(80 * 12.5 * 2); // 2000
+      expect(result.potentialLoss).toBe(40 * 12.5 * 2);
+      expect(result.potentialProfit).toBe(80 * 12.5 * 2);
+    });
+  });
+
+  describe("TEST 10: BTCUSD crypto units", () => {
+    it("profit/loss = price distance * units", () => {
+      const result = calculateFromFixedSize("BTCUSD", {
+        accountBalance: 10000,
+        entry: 50000,
+        stop: 49000,
+        takeProfit: 52000,
+        positionSize: 0.1,
+        direction: "buy",
+      });
+      expect(result.potentialLoss).toBeCloseTo(1000 * 0.1, 0);
+      expect(result.potentialProfit).toBeCloseTo(2000 * 0.1, 0);
     });
   });
 

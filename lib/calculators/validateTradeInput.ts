@@ -77,16 +77,17 @@ export function validateTradeInput(input: TradeInputToValidate): ValidationResul
   const spec = getInstrumentOrFallback(symbol);
   const minP = spec.minReasonablePrice;
   const maxP = spec.maxReasonablePrice;
+  const priceHint = getInvalidPriceHint(spec);
   if (minP != null || maxP != null) {
     const check = (price: number, label: string) => {
       if (minP != null && price < minP) {
         errors.push(
-          `Invalid price for ${spec.displayName}. ${label} ${price} is below the reasonable range (e.g. ${minP}–${maxP ?? "max"}). Use a valid ${spec.assetClass} price.`
+          `Invalid price for ${spec.displayName}. ${label} ${price} is below the reasonable range. ${priceHint}`
         );
       }
       if (maxP != null && price > maxP) {
         errors.push(
-          `Invalid price for ${spec.displayName}. ${label} ${price} is above the reasonable range (e.g. ${minP ?? "min"}–${maxP}). Use a valid ${spec.assetClass} price.`
+          `Invalid price for ${spec.displayName}. ${label} ${price} is above the reasonable range. ${priceHint}`
         );
       }
     };
@@ -106,4 +107,18 @@ export function validateTradeInput(input: TradeInputToValidate): ValidationResul
     valid: errors.length === 0,
     errors,
   };
+}
+
+function getInvalidPriceHint(spec: { displayName: string; assetClass: string; symbol: string }): string {
+  const s = spec.symbol.toUpperCase();
+  if (spec.assetClass === "forex") {
+    if (s.includes("JPY")) return "Expected a forex price such as 150.25, not a pip value.";
+    return `Expected a forex price such as 1.2650, not ${spec.symbol === "GBPUSD" ? "10265" : "a pip value"}.`;
+  }
+  if (spec.assetClass === "commodity") return "Use a valid commodity price (e.g. XAUUSD around 2000, oil 70–80).";
+  if (spec.assetClass === "index") return "Use index levels (e.g. US30 35000, NAS100 15000).";
+  if (spec.assetClass === "stock") return "Use share price (e.g. AAPL 200).";
+  if (spec.assetClass === "future") return "Use futures price (e.g. ES 4500).";
+  if (spec.assetClass === "crypto") return "Use spot price (e.g. BTCUSD 50000).";
+  return "Use a valid price for this instrument.";
 }

@@ -129,6 +129,23 @@ export function calculateFromFixedSize(
     stopDistancePrice > 0 ? takeProfitDistancePrice / stopDistancePrice : 0;
   const rMultiple = actualRiskAmount > 0 ? potentialProfit / actualRiskAmount : riskReward;
 
+  // Sanity warnings (informational; do not block)
+  if (spec.calculationMode === "forex" && spec.pipSize) {
+    const takeProfitPips = takeProfitDistancePrice / spec.pipSize;
+    if (takeProfitPips > 500) {
+      warnings.push("Warning: Extremely large take profit distance for a forex trade.");
+    }
+  }
+  if (riskReward > 20) {
+    warnings.push("Warning: Extremely high risk:reward. Please verify your prices.");
+  }
+  if (actualRiskPercent > 5 && actualRiskPercent < 10) {
+    warnings.push("Warning: Risk is above 5% of account.");
+  }
+  if (actualRiskPercent >= 10) {
+    warnings.push("Warning: Risk is 10% or more of account. Please verify.");
+  }
+
   return {
     riskAmount: actualRiskAmount,
     stopDistancePrice,
