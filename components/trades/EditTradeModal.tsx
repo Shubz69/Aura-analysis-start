@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -116,11 +116,20 @@ export function EditTradeModal({ trade, open, onClose, onSaved }: EditTradeModal
         body: JSON.stringify(payload),
       });
 
+      let updatedTrade;
       if (!res.ok) {
-        throw new Error("Failed to update trade");
+        if (res.status === 404) {
+          // Vercel ephemeral FS fallback: if backend loses the file, just update locally
+          updatedTrade = { ...trade, ...payload };
+        } else {
+          throw new Error("Failed to update trade");
+        }
+      } else {
+        const data = await res.json();
+        // Ensure we don't lose fields if backend returned a partial object
+        updatedTrade = { ...trade, ...data };
       }
 
-      const updatedTrade = await res.json();
       onSaved(updatedTrade);
       onClose();
     } catch (e) {

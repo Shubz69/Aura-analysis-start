@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -66,11 +66,20 @@ export function TradeOutcomeModal({ trade, open, onClose, outcomeType, onSaved }
         body: JSON.stringify(payload),
       });
 
+      let updatedTrade;
       if (!res.ok) {
-        throw new Error("Failed to update trade");
+        if (res.status === 404) {
+          // Vercel ephemeral FS fallback: if backend loses the file, just update locally
+          updatedTrade = { ...trade, ...payload };
+        } else {
+          throw new Error("Failed to update trade");
+        }
+      } else {
+        const data = await res.json();
+        // Ensure we don't lose fields if backend returned a partial object
+        updatedTrade = { ...trade, ...data };
       }
 
-      const updatedTrade = await res.json();
       onSaved(updatedTrade);
       onClose();
     } catch (e) {
@@ -86,6 +95,7 @@ export function TradeOutcomeModal({ trade, open, onClose, outcomeType, onSaved }
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Mark Trade as {outcomeType.charAt(0).toUpperCase() + outcomeType.slice(1)}</DialogTitle>
+          <DialogDescription className="sr-only">Enter the outcome details for this trade.</DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">
