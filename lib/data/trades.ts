@@ -33,11 +33,9 @@ function saveMockTrade(trade: TradeRow) {
   }
 }
 
-function getNextMockId(): number {
-  const trades = getMockTrades();
-  if (trades.length === 0) return 1;
-  const ids = trades.map(t => typeof t.id === 'number' ? t.id : parseInt(t.id as string, 10)).filter(n => !isNaN(n));
-  return ids.length > 0 ? Math.max(...ids) + 1 : 1;
+function getNextMockId(): string {
+  // Use a timestamp and random string to ensure unique IDs across Vercel ephemeral storage wipes
+  return Date.now().toString() + "-" + Math.random().toString(36).substring(2, 9);
 }
 
 export interface TradeRow {

@@ -39,10 +39,30 @@ export function JournalClient({ initialTrades, openTradeId }: JournalClientProps
 
   // Sync trades from localStore on mount if it has more trades than the server provided
   useEffect(() => {
-    if (mounted && localTrades.length > initialTrades.length) {
-      setTrades(localTrades);
+    if (mounted) {
+      // Auto-fix any duplicate IDs that might have leaked into local storage due to previous bugs
+      const seen = new Set<string>();
+      let needsFix = false;
+      const deduplicated = localTrades.map(t => {
+        let id = t.id;
+        if (seen.has(id)) {
+          needsFix = true;
+          id = `${id}-dup-${Math.random().toString(36).substring(2, 7)}`;
+        }
+        seen.add(id);
+        return { ...t, id };
+      });
+
+      if (needsFix) {
+        setLocalTrades(deduplicated);
+        if (deduplicated.length > initialTrades.length) {
+          setTrades(deduplicated);
+        }
+      } else if (localTrades.length > initialTrades.length) {
+        setTrades(localTrades);
+      }
     }
-  }, [mounted, localTrades, initialTrades]);
+  }, [mounted, localTrades, initialTrades, setLocalTrades]);
 
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
