@@ -18,6 +18,7 @@ import type { TradeCalculatorForm as TradeCalculatorFormType } from "@/lib/valid
 import type { Asset } from "@/types";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { useDraftTradeStore } from "@/lib/store/draftTradeStore";
+import { useTradesStore } from "@/lib/store/tradesStore";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
@@ -40,6 +41,7 @@ export function TradeCalculatorPageClient({
   
   const draft = useDraftTradeStore((state) => state.draft);
   const clearDraftTrade = useDraftTradeStore((state) => state.clearDraftTrade);
+  const addTrade = useTradesStore((state) => state.addTrade);
   const hasValidDraft = draft?.validator && draft.validator.score >= 70;
 
   async function handleSave(
@@ -106,6 +108,10 @@ export function TradeCalculatorPageClient({
         setSaving(false);
         return;
       }
+      
+      const savedTrade = await res.json();
+      addTrade(savedTrade);
+      
       // Redirect to dashboard so updated numbers (KPIs, charts) are visible
       clearDraftTrade();
       // Also clear the raw validator form local storage

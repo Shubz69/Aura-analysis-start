@@ -18,6 +18,10 @@ import {
 } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { formatCurrencySafe, formatPercentSafe, formatRSafe } from "@/lib/utils";
+import { useTradesStore } from "@/lib/store/tradesStore";
+import { useEffect, useMemo } from "react";
+import { buildKpiSummary } from "@/lib/analytics/kpis";
+import { consistencyScore } from "@/lib/analytics/consistency";
 
 type SortKey = "totalPnL" | "winRate" | "totalTrades" | "avgR" | "profitFactor" | "consistencyScore";
 
@@ -38,9 +42,33 @@ interface LeaderboardClientProps {
   isAdmin: boolean;
 }
 
-export function LeaderboardClient({ rows, isAdmin }: LeaderboardClientProps) {
+export function LeaderboardClient({ rows: serverRows, isAdmin }: LeaderboardClientProps) {
   const [sortBy, setSortBy] = useState<SortKey>("totalPnL");
   const [asc, setAsc] = useState(false);
+  const localTrades = useTradesStore(state => state.trades);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const rows = useMemo(() => {
+    if (serverRows.length > 0) return serverRows;
+    if (mounted && localTrades.length > 0) {
+      const kpi = buildKpiSummary(localTrades);
+      return [
+        {
+          id: "local-user",
+          name: "You (Local)",
+          totalTrades: kpi.totalTrades,
+          winRate: kpi.winRate,
+          avgR: kpi.averageR,
+          totalPnL: kpi.totalPnL,
+          profitFactor: Number.isFinite(kpi.profitFactor) ? kpi.profitFactor : 0,
+          consistencyScore: consistencyScore(localTrades),
+          bestPair: kpi.bestPair,
+        }
+      ];
+    }
+    return serverRows;
+  }, [mounted, localTrades, serverRows]);
 
   const sorted = [...rows].sort((a, b) => {
     const va = a[sortBy];

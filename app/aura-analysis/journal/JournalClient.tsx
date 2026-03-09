@@ -24,6 +24,7 @@ import { EmptyState } from "@/components/dashboard/EmptyState";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrencySafe, formatNumber } from "@/lib/utils";
 import type { Trade } from "@/types";
+import { useTradesStore } from "@/lib/store/tradesStore";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const PAGE_SIZE = 15;
@@ -36,8 +37,20 @@ interface JournalClientProps {
 export function JournalClient({ initialTrades, openTradeId }: JournalClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { trades: localTrades, setTrades: setLocalTrades } = useTradesStore();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const [trades, setTrades] = useState<Trade[]>(initialTrades);
-  const [loading, setLoading] = useState(true);
+
+  // Sync trades from localStore on mount if it has more trades than the server provided
+  useEffect(() => {
+    if (mounted && localTrades.length > initialTrades.length) {
+      setTrades(localTrades);
+    }
+  }, [mounted, localTrades, initialTrades]);
+
+  const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filterPair, setFilterPair] = useState<string>("all");
@@ -58,17 +71,26 @@ export function JournalClient({ initialTrades, openTradeId }: JournalClientProps
       })
       .then((data: Trade[]) => {
         if (cancelled) return;
-        setTrades(Array.isArray(data) ? data.map((t) => ({ ...t, id: String(t.id) })) : []);
+        const serverData = Array.isArray(data) ? data.map((t) => ({ ...t, id: String(t.id) })) : [];
+        // If server data exists and is larger/newer, we might want to sync. 
+        // But for mock offline fallback, we'll merge them or just prefer the local store if it has MORE trades.
+        setTrades(prev => {
+          if (serverData.length > prev.length) {
+            setLocalTrades(serverData);
+            return serverData;
+          }
+          // Default to local if server is empty (due to Vercel ephemeral fs)
+          return prev;
+        });
       })
       .catch((e) => {
         if (!cancelled) setFetchError(e.message ?? "Failed to load trades");
-        if (!cancelled) setTrades([]);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, []);
+  }, [setLocalTrades]);
 
   const pairs = useMemo(() => {
     const set = new Set(trades.map((t) => t.pair));

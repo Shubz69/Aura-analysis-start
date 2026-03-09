@@ -4,6 +4,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { KPICard } from "@/components/dashboard/KPICard";
 import { formatCurrencySafe, formatPercentSafe } from "@/lib/utils";
 import type { Profile } from "@/types";
+import { useTradesStore } from "@/lib/store/tradesStore";
+import { useEffect, useState, useMemo } from "react";
+import { buildKpiSummary } from "@/lib/analytics/kpis";
+import { consistencyScore } from "@/lib/analytics/consistency";
+import { sessionPerformance } from "@/lib/analytics/sessionPerformance";
 
 interface ProfileClientProps {
   profile: Profile | null;
@@ -20,7 +25,32 @@ interface ProfileClientProps {
   };
 }
 
-export function ProfileClient({ profile, email, kpis }: ProfileClientProps) {
+export function ProfileClient({ profile, email, kpis: serverKpis }: ProfileClientProps) {
+  const localTrades = useTradesStore(state => state.trades);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const kpis = useMemo(() => {
+    if (serverKpis.totalTrades > 0) return serverKpis;
+    if (mounted && localTrades.length > 0) {
+      const computed = buildKpiSummary(localTrades);
+      const sessionPerf = sessionPerformance(localTrades);
+      const sessionPnL: Record<string, number> = {};
+      sessionPerf.forEach(s => { sessionPnL[s.session] = s.totalPnL; });
+      return {
+        totalTrades: computed.totalTrades,
+        winRate: computed.winRate,
+        avgR: computed.averageR,
+        totalPnL: computed.totalPnL,
+        bestPair: computed.bestPair,
+        worstPair: computed.worstPair,
+        consistencyScore: consistencyScore(localTrades),
+        sessionPnL,
+      };
+    }
+    return serverKpis;
+  }, [mounted, localTrades, serverKpis]);
+
   const preferredSession = Object.entries(kpis.sessionPnL).sort(
     (a, b) => b[1] - a[1]
   )[0]?.[0] ?? "—";

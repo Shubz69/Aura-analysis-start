@@ -20,6 +20,9 @@ import {
 import { Plus, BarChart3, AlertCircle } from "lucide-react";
 import { formatCurrencySafe, formatPercentSafe, formatRSafe } from "@/lib/utils";
 import { TradingCalendar, type CalendarTrade } from "@/components/dashboard/TradingCalendar";
+import { useTradesStore } from "@/lib/store/tradesStore";
+import { buildOverviewDatasets } from "@/lib/analytics/chartDatasets";
+import { useEffect, useState, useMemo } from "react";
 
 interface OverviewClientProps {
   kpis: {
@@ -52,16 +55,88 @@ const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { st
 const item = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0 } };
 
 export function OverviewClient({
-  kpis,
-  equityData,
-  recentTrades,
-  pairData,
-  sessionData,
-  calendarTrades,
-  isDemo = false,
+  kpis: serverKpis,
+  equityData: serverEquity,
+  recentTrades: serverRecent,
+  pairData: serverPairData,
+  sessionData: serverSessionData,
+  calendarTrades: serverCalendarTrades,
+  isDemo: serverIsDemo = false,
   error,
 }: OverviewClientProps) {
   const router = useRouter();
+  const localTrades = useTradesStore(state => state.trades);
+  
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const {
+    kpis,
+    equityData,
+    recentTrades,
+    pairData,
+    sessionData,
+    calendarTrades,
+    isDemo,
+  } = useMemo(() => {
+    // If the server provided real trades (not demo), use them primarily
+    if (!serverIsDemo) {
+      return {
+        kpis: serverKpis,
+        equityData: serverEquity,
+        recentTrades: serverRecent,
+        pairData: serverPairData,
+        sessionData: serverSessionData,
+        calendarTrades: serverCalendarTrades,
+        isDemo: false,
+      };
+    }
+
+    // If server sent demo data but we have local trades, recalculate from local!
+    if (mounted && localTrades && localTrades.length > 0) {
+      const datasets = buildOverviewDatasets(localTrades, 10000);
+      
+      const newKpis = {
+        totalTrades: datasets.kpiSummary.totalTrades,
+        winRate: datasets.kpiSummary.winRate,
+        avgR: datasets.kpiSummary.averageR,
+        totalPnL: datasets.kpiSummary.totalPnL,
+        profitFactor: datasets.kpiSummary.profitFactor,
+        avgRR: datasets.kpiSummary.averageRR,
+        bestPair: datasets.kpiSummary.bestPair,
+        worstPair: datasets.kpiSummary.worstPair,
+      };
+
+      const newCalendarTrades = localTrades.map((t) => ({
+        date: new Date(t.created_at).toISOString().slice(0, 10),
+        result: t.result as "win" | "loss" | "breakeven" | "open",
+        pnl: Number(t.pnl) || 0,
+        id: String(t.id),
+      }));
+      
+      return {
+        kpis: newKpis,
+        equityData: datasets.equityCurveData,
+        recentTrades: datasets.recentTrades,
+        pairData: datasets.pairPerformanceTop5.map((p) => ({ pair: p.pair, pnl: p.totalPnL })),
+        sessionData: datasets.sessionPerformanceData.filter((s) => s.tradeCount > 0).map((s) => ({ session: s.session, pnl: s.totalPnL })),
+        calendarTrades: newCalendarTrades,
+        isDemo: false,
+      };
+    }
+
+    // Default to server demo data
+    return {
+      kpis: serverKpis,
+      equityData: serverEquity,
+      recentTrades: serverRecent,
+      pairData: serverPairData,
+      sessionData: serverSessionData,
+      calendarTrades: serverCalendarTrades,
+      isDemo: true,
+    };
+  }, [mounted, localTrades, serverIsDemo, serverKpis, serverEquity, serverRecent, serverPairData, serverSessionData, serverCalendarTrades]);
+
   const displayKpis = isDemo
     ? {
         ...kpis,

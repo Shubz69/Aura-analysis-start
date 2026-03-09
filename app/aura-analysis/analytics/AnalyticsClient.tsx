@@ -6,6 +6,13 @@ import { EquityCurveChart } from "@/components/charts/EquityCurveChart";
 import { PerformanceByPairChart } from "@/components/charts/PerformanceByPairChart";
 import { SessionChart } from "@/components/charts/SessionChart";
 import { formatCurrencySafe, formatPercentSafe, formatRSafe } from "@/lib/utils";
+import { useTradesStore } from "@/lib/store/tradesStore";
+import { useEffect, useState, useMemo } from "react";
+import { buildAnalyticsDatasets } from "@/lib/analytics/chartDatasets";
+import { buildKpiSummary } from "@/lib/analytics/kpis";
+import { maxDrawdownAbsolute } from "@/lib/analytics/drawdown";
+import { longestWinStreak, longestLossStreak } from "@/lib/analytics/streaks";
+import { consistencyScore } from "@/lib/analytics/consistency";
 
 interface AnalyticsClientProps {
   stats: {
@@ -28,12 +35,70 @@ interface AnalyticsClientProps {
 }
 
 export function AnalyticsClient({
-  stats,
-  equityData,
-  pairData,
-  sessionData,
-  isDemo = false,
+  stats: serverStats,
+  equityData: serverEquityData,
+  pairData: serverPairData,
+  sessionData: serverSessionData,
+  isDemo: serverIsDemo = false,
 }: AnalyticsClientProps) {
+  const localTrades = useTradesStore(state => state.trades);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const {
+    stats,
+    equityData,
+    pairData,
+    sessionData,
+    isDemo,
+  } = useMemo(() => {
+    if (!serverIsDemo) {
+      return {
+        stats: serverStats,
+        equityData: serverEquityData,
+        pairData: serverPairData,
+        sessionData: serverSessionData,
+        isDemo: false,
+      };
+    }
+
+    if (mounted && localTrades && localTrades.length > 0) {
+      const startBalance = 10000;
+      const datasets = buildAnalyticsDatasets(localTrades, startBalance);
+      const kpi = buildKpiSummary(localTrades);
+
+      const localStats = {
+        totalTrades: kpi.totalTrades,
+        winRate: kpi.winRate,
+        avgR: kpi.averageR,
+        totalPnL: kpi.totalPnL,
+        profitFactor: kpi.profitFactor,
+        expectancy: kpi.expectancy,
+        maxDrawdown: maxDrawdownAbsolute(localTrades, startBalance),
+        maxWinStreak: longestWinStreak(localTrades),
+        maxLossStreak: longestLossStreak(localTrades),
+        avgChecklist: kpi.averageChecklistPercent,
+        consistency: consistencyScore(localTrades),
+      };
+
+      return {
+        stats: localStats,
+        equityData: datasets.equityCurveData.map((p) => ({ date: p.date, equity: p.equity })),
+        pairData: datasets.pairPerformanceData.map((p) => ({ pair: p.pair, pnl: p.totalPnL })),
+        sessionData: datasets.sessionPerformanceData.filter((s) => s.tradeCount > 0).map((s) => ({ session: s.session, pnl: s.totalPnL })),
+        isDemo: false,
+      };
+    }
+
+    return {
+      stats: serverStats,
+      equityData: serverEquityData,
+      pairData: serverPairData,
+      sessionData: serverSessionData,
+      isDemo: true,
+    };
+  }, [mounted, localTrades, serverIsDemo, serverStats, serverEquityData, serverPairData, serverSessionData]);
+
   return (
     <div className="space-y-6 sm:space-y-8">
       {isDemo && (
