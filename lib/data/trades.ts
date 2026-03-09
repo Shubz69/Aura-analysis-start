@@ -69,6 +69,9 @@ export interface TradeRow {
   trade_grade: string | null;
   validator_data: string | null;
   notes: string | null;
+  close_price: number | null;
+  closed_at: string | null;
+  close_notes: string | null;
   created_at: string;
 }
 
@@ -122,6 +125,9 @@ export interface InsertTradeBody {
   trade_grade: string;
   validator_data?: string | null;
   notes?: string | null;
+  close_price?: number | null;
+  closed_at?: string | null;
+  close_notes?: string | null;
 }
 
 export async function insertTrade(
@@ -156,6 +162,9 @@ export async function insertTrade(
     body.trade_grade ?? "C",
     body.validator_data ?? null,
     body.notes ?? null,
+    body.close_price ?? null,
+    body.closed_at ?? null,
+    body.close_notes ?? null,
   ];
 
   try {
@@ -164,8 +173,8 @@ export async function insertTrade(
         user_id, pair, asset_id, asset_class, direction, session,
         account_balance, risk_percent, risk_amount, entry_price, stop_loss, take_profit,
         stop_loss_pips, take_profit_pips, rr, position_size, potential_profit, potential_loss,
-        result, pnl, r_multiple, checklist_score, checklist_total, checklist_percent, trade_grade, validator_data, notes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        result, pnl, r_multiple, checklist_score, checklist_total, checklist_percent, trade_grade, validator_data, notes, close_price, closed_at, close_notes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       insertParams
     );
     const insertId = (result as { insertId?: number })?.insertId;
@@ -208,10 +217,85 @@ export async function insertTrade(
     trade_grade: body.trade_grade ?? "C",
     validator_data: body.validator_data ?? null,
     notes: body.notes ?? null,
+    close_price: body.close_price ?? null,
+    closed_at: body.closed_at ?? null,
+    close_notes: body.close_notes ?? null,
     created_at: new Date().toISOString(),
   };
   saveMockTrade(mockTrade);
   return normalizeTradeRow(mockTrade);
+}
+
+export async function updateTrade(
+  userId: string,
+  tradeId: string | number,
+  updates: Partial<InsertTradeBody>
+): Promise<TradeRow | null> {
+  const fields: string[] = [];
+  const values: any[] = [];
+
+  const addField = (key: string, value: any) => {
+    if (value !== undefined) {
+      fields.push(`${key} = ?`);
+      values.push(value);
+    }
+  };
+
+  addField("pair", updates.pair);
+  addField("asset_id", updates.asset_id);
+  addField("asset_class", updates.asset_class);
+  addField("direction", updates.direction);
+  addField("session", updates.session);
+  addField("entry_price", updates.entry_price);
+  addField("stop_loss", updates.stop_loss);
+  addField("take_profit", updates.take_profit);
+  addField("result", updates.result);
+  addField("pnl", updates.pnl);
+  addField("r_multiple", updates.r_multiple);
+  addField("checklist_score", updates.checklist_score);
+  addField("checklist_total", updates.checklist_total);
+  addField("checklist_percent", updates.checklist_percent);
+  addField("trade_grade", updates.trade_grade);
+  addField("validator_data", updates.validator_data);
+  addField("notes", updates.notes);
+  addField("close_price", updates.close_price);
+  addField("closed_at", updates.closed_at);
+  addField("close_notes", updates.close_notes);
+
+  if (fields.length === 0) return null;
+
+  values.push(tradeId);
+  values.push(userId);
+
+  try {
+    const result = await executeQuery(
+      `UPDATE ${TABLE} SET ${fields.join(", ")} WHERE id = ? AND user_id = ?`,
+      values
+    );
+
+    const rows = await query(`SELECT * FROM ${TABLE} WHERE id = ? AND user_id = ?`, [tradeId, userId]);
+    const row = (rows as TradeRow[])?.[0];
+    if (row) return normalizeTradeRow(row);
+  } catch (e) {
+    console.warn("DB update failed, falling back to in-memory trades", e);
+  }
+
+  // Fallback update in mock trades
+  try {
+    const trades = getMockTrades();
+    const index = trades.findIndex(t => String(t.id) === String(tradeId) && String(t.user_id) === String(userId));
+    if (index >= 0) {
+      const existing = trades[index];
+      const updatedTrade = { ...existing, ...updates };
+      trades[index] = updatedTrade as TradeRow;
+      fs.writeFileSync(MOCK_FILE, JSON.stringify(trades, null, 2));
+      return normalizeTradeRow(updatedTrade as TradeRow);
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  return null;
 }
 
 function normalizeTradeRow(row: TradeRow): TradeRow {

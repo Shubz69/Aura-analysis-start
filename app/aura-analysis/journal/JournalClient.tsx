@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { TradeDetailSheet } from "@/components/trades/TradeDetailSheet";
+import { TradeOutcomeModal } from "@/components/trades/TradeOutcomeModal";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatCurrencySafe, formatNumber } from "@/lib/utils";
@@ -59,6 +60,7 @@ export function JournalClient({ initialTrades, openTradeId }: JournalClientProps
   const [filterSession, setFilterSession] = useState<string>("all");
   const [page, setPage] = useState(0);
   const [selectedTradeId, setSelectedTradeId] = useState<string | null>(openTradeId);
+  const [outcomeAction, setOutcomeAction] = useState<{ trade: Trade; type: "win" | "loss" | "breakeven" } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -231,6 +233,7 @@ export function JournalClient({ initialTrades, openTradeId }: JournalClientProps
                   <TableHead className="text-right">R</TableHead>
                   <TableHead>Session</TableHead>
                   <TableHead>Grade</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -250,13 +253,46 @@ export function JournalClient({ initialTrades, openTradeId }: JournalClientProps
                     <TableCell>{formatNumber(t.stop_loss)}</TableCell>
                     <TableCell>{formatNumber(t.take_profit)}</TableCell>
                     <TableCell>{t.risk_percent}%</TableCell>
-                    <TableCell>{t.result}</TableCell>
-                    <TableCell className={`text-right ${t.pnl >= 0 ? "text-emerald-500" : "text-red-500"}`}>
-                      {formatCurrencySafe(t.pnl)}
+                    <TableCell>
+                      {t.result === "open" ? (
+                        <span className="bg-muted px-2 py-1 rounded-md text-xs font-medium uppercase">Open</span>
+                      ) : t.result === "win" ? (
+                        <span className="bg-emerald-500/20 text-emerald-500 px-2 py-1 rounded-md text-xs font-medium uppercase">Win</span>
+                      ) : t.result === "loss" ? (
+                        <span className="bg-red-500/20 text-red-500 px-2 py-1 rounded-md text-xs font-medium uppercase">Loss</span>
+                      ) : (
+                        <span className="bg-blue-500/20 text-blue-500 px-2 py-1 rounded-md text-xs font-medium uppercase">BE</span>
+                      )}
                     </TableCell>
-                    <TableCell className="text-right">{formatNumber(t.r_multiple, 2)}</TableCell>
+                    <TableCell className={`text-right ${t.result === "open" ? "text-muted-foreground" : t.pnl >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                      {t.result === "open" ? "—" : formatCurrencySafe(t.pnl)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {t.result === "open" ? "—" : formatNumber(t.r_multiple, 2)}
+                    </TableCell>
                     <TableCell>{t.session ?? "—"}</TableCell>
                     <TableCell>{t.trade_grade ?? "—"}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                        {t.result === "open" ? (
+                          <>
+                            <Button variant="ghost" size="sm" className="h-8 px-2 text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10" onClick={() => setOutcomeAction({ trade: t, type: "win" })}>
+                              Win
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-8 px-2 text-red-500 hover:text-red-400 hover:bg-red-500/10" onClick={() => setOutcomeAction({ trade: t, type: "loss" })}>
+                              Loss
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-8 px-2 text-blue-500 hover:text-blue-400 hover:bg-blue-500/10" onClick={() => setOutcomeAction({ trade: t, type: "breakeven" })}>
+                              BE
+                            </Button>
+                          </>
+                        ) : (
+                          <Button variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground hover:text-foreground" onClick={() => setOutcomeAction({ trade: t, type: t.result as any })}>
+                            Edit Outcome
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -299,6 +335,21 @@ export function JournalClient({ initialTrades, openTradeId }: JournalClientProps
           onClose={closeTrade}
           onDeleted={closeTrade}
           initialTrade={trades.find((t) => t.id === selectedTradeId) ?? undefined}
+        />
+      )}
+
+      {outcomeAction && (
+        <TradeOutcomeModal
+          trade={outcomeAction.trade}
+          open={!!outcomeAction}
+          onClose={() => setOutcomeAction(null)}
+          outcomeType={outcomeAction.type}
+          onSaved={(updatedTrade) => {
+            const { updateTrade } = useTradesStore.getState();
+            updateTrade(updatedTrade);
+            // Local state will be updated via the store sync or we can do it manually here
+            setTrades((prev) => prev.map(t => t.id === updatedTrade.id ? updatedTrade : t));
+          }}
         />
       )}
     </div>

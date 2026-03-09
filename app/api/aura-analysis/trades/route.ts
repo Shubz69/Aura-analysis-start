@@ -150,6 +150,11 @@ export async function POST(request: NextRequest) {
       try {
         await db.query(`ALTER TABLE aura_analysis_trades ADD COLUMN validator_data JSON DEFAULT NULL`);
       } catch (e) { /* ignore if exists */ }
+      try {
+        await db.query(`ALTER TABLE aura_analysis_trades ADD COLUMN close_price DECIMAL(20,8) DEFAULT NULL`);
+        await db.query(`ALTER TABLE aura_analysis_trades ADD COLUMN closed_at TIMESTAMP NULL DEFAULT NULL`);
+        await db.query(`ALTER TABLE aura_analysis_trades ADD COLUMN close_notes TEXT DEFAULT NULL`);
+      } catch (e) { /* ignore if exists */ }
     } catch (err) {
       console.warn("Auto-migrate trades table failed", err);
     }
@@ -199,6 +204,67 @@ export async function POST(request: NextRequest) {
     });
   } catch (err) {
     console.error("POST /api/aura-analysis/trades", err);
+    return NextResponse.json(
+      { error: "Server error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  const req = {
+    headers: request.headers,
+    cookies: { token: request.cookies.get("token")?.value },
+  };
+  const db = dbAdapter();
+  try {
+    let user = await getCurrentUserFromToken(req, db);
+    if (!user) {
+      user = await getFallbackUser(db);
+    }
+    if (!user) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401, headers: { "Cache-Control": "no-store" } }
+      );
+    }
+    if (BLOCKED_ROLES.includes(user.role)) {
+      return NextResponse.json(
+        { error: "Access denied" },
+        { status: 403, headers: { "Cache-Control": "no-store" } }
+      );
+    }
+    const body = await request.json();
+    const tradeId = body.id;
+
+    if (!tradeId) {
+      return NextResponse.json(
+        { error: "Trade ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const { updateTrade } = await import("@/lib/data/trades");
+    const updates = { ...body };
+    delete updates.id;
+    if (updates.validator_data) {
+      updates.validator_data = typeof updates.validator_data === "string" ? updates.validator_data : JSON.stringify(updates.validator_data);
+    }
+
+    const trade = await updateTrade(String(user.id), tradeId, updates);
+
+    if (!trade) {
+      return NextResponse.json(
+        { error: "Trade not found or failed to update." },
+        { status: 404 }
+      );
+    }
+    return NextResponse.json(trade, {
+      status: 200,
+      headers: { "Cache-Control": "no-store" },
+    });
+  } catch (err) {
+    console.error("PATCH /api/aura-analysis/trades", err);
     return NextResponse.json(
       { error: "Server error" },
       { status: 500 }

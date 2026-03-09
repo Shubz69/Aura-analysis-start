@@ -10,7 +10,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { formatCurrencySafe, formatNumber, formatPositionSize, getPositionSizeKind } from "@/lib/utils";
 import type { Trade, TradeChecklistItem } from "@/types";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, CheckCircle2, XCircle, MinusCircle } from "lucide-react";
+import { getChecklistItemLabel } from "@/lib/validator/checklistSections";
+import { TradeOutcomeModal } from "./TradeOutcomeModal";
+import { EditTradeModal } from "./EditTradeModal";
+import { useTradesStore } from "@/lib/store/tradesStore";
 
 interface TradeDetailSheetProps {
   tradeId: string;
@@ -28,9 +32,12 @@ export function TradeDetailSheet({
   onDeleted,
   initialTrade,
 }: TradeDetailSheetProps) {
+  const { updateTrade } = useTradesStore();
   const [trade, setTrade] = useState<Trade | null>(initialTrade ?? null);
   const [checklistItems, setChecklistItems] = useState<TradeChecklistItem[]>([]);
   const [loading, setLoading] = useState(!initialTrade);
+  const [outcomeType, setOutcomeType] = useState<"win" | "loss" | "breakeven" | null>(null);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   useEffect(() => {
     if (!open || !tradeId) return;
@@ -75,6 +82,12 @@ export function TradeDetailSheet({
               <LabelValue label="Direction" value={trade.direction} />
               <LabelValue label="Session" value={trade.session ?? "—"} />
               <LabelValue label="Result" value={trade.result} />
+              {trade.result !== "open" && trade.closed_at && (
+                <LabelValue label="Closed date" value={new Date(trade.closed_at).toLocaleString()} />
+              )}
+              {trade.result !== "open" && trade.close_price != null && (
+                <LabelValue label="Close price" value={formatNumber(trade.close_price)} />
+              )}
               <LabelValue label="Entry" value={formatNumber(trade.entry_price)} />
               <LabelValue label="Stop loss" value={formatNumber(trade.stop_loss)} />
               <LabelValue label="Take profit" value={formatNumber(trade.take_profit)} />
@@ -102,14 +115,17 @@ export function TradeDetailSheet({
                 <div>
                   <h4 className="font-medium text-sm mb-2">Validator Checklist</h4>
                   <ul className="space-y-1 text-sm">
-                    {entries.map(([key, passed]) => (
-                      <li key={key} className="flex items-center gap-2">
-                        <span className={passed ? "text-emerald-500" : "text-red-500"}>
-                          {passed ? "✓" : "✗"}
-                        </span>
-                        {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                      </li>
-                    ))}
+                    {entries.map(([key, passed]) => {
+                      const label = getChecklistItemLabel(key) || key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+                      return (
+                        <li key={key} className="flex items-center gap-2">
+                          <span className={passed ? "text-emerald-500" : "text-red-500"}>
+                            {passed ? "✓" : "✗"}
+                          </span>
+                          {label}
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               );
@@ -137,11 +153,22 @@ export function TradeDetailSheet({
               </div>
             )}
             <div className="flex gap-2 pt-4 border-t border-border">
-              <Button variant="outline" size="sm" asChild>
-                <a href={`/aura-analysis/journal/${tradeId}/edit`}>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Edit
-                </a>
+              {trade.result === "open" && (
+                <>
+                  <Button variant="outline" size="sm" className="text-emerald-500 hover:text-emerald-400" onClick={() => setOutcomeType("win")}>
+                    Win
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-red-500 hover:text-red-400" onClick={() => setOutcomeType("loss")}>
+                    Loss
+                  </Button>
+                  <Button variant="outline" size="sm" className="text-blue-500 hover:text-blue-400" onClick={() => setOutcomeType("breakeven")}>
+                    BE
+                  </Button>
+                </>
+              )}
+              <Button variant="outline" size="sm" onClick={() => setIsEditModalOpen(true)}>
+                <Pencil className="mr-2 h-4 w-4" />
+                Edit
               </Button>
               <Button variant="destructive" size="sm" onClick={handleDelete}>
                 <Trash2 className="mr-2 h-4 w-4" />
@@ -153,6 +180,31 @@ export function TradeDetailSheet({
           <p className="text-muted-foreground pt-4">Trade not found.</p>
         )}
       </SheetContent>
+
+      {trade && outcomeType && (
+        <TradeOutcomeModal
+          trade={trade}
+          open={!!outcomeType}
+          onClose={() => setOutcomeType(null)}
+          outcomeType={outcomeType}
+          onSaved={(updatedTrade) => {
+            setTrade(updatedTrade);
+            updateTrade(updatedTrade);
+          }}
+        />
+      )}
+
+      {trade && isEditModalOpen && (
+        <EditTradeModal
+          trade={trade}
+          open={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          onSaved={(updatedTrade) => {
+            setTrade(updatedTrade);
+            updateTrade(updatedTrade);
+          }}
+        />
+      )}
     </Sheet>
   );
 }

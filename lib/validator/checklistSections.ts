@@ -223,3 +223,18 @@ export function getSectionScore(section: SectionConfig, checked: Set<string>): n
   }
   return Math.min(score, section.maxPoints);
 }
+
+export function getChecklistItemLabel(id: string): string | null {
+  for (const section of CHECKLIST_SECTIONS) {
+    if (isPatternSection(section)) {
+      for (const sub of section.subPatterns) {
+        const found = sub.items.find(item => item.id === id);
+        if (found) return found.label;
+      }
+    } else {
+      const found = section.items.find(item => item.id === id);
+      if (found) return found.label;
+    }
+  }
+  return null;
+}

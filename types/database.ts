@@ -56,6 +56,9 @@ export interface Trade {
   trade_grade: string | null;
   validator_data?: string | null;
   notes: string | null;
+  close_price: number | null;
+  closed_at: string | null;
+  close_notes: string | null;
   created_at: string;
 }
 
