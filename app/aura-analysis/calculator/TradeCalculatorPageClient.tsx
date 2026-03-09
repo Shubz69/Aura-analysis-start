@@ -58,6 +58,11 @@ export function TradeCalculatorPageClient({
     const isDefaultAsset = String(asset?.id).startsWith("def-");
     const assetId = asset?.id && !isDefaultAsset ? Number(asset.id) : null;
 
+    const actualRiskPercent =
+      values.computed.positionSize > 0 && values.accountBalance > 0
+        ? (values.computed.riskAmount / values.accountBalance) * 100
+        : values.riskPercent;
+
     const payload = {
       pair: values.pair,
       asset_id: assetId,
@@ -65,7 +70,7 @@ export function TradeCalculatorPageClient({
       direction: values.direction,
       session: values.session || null,
       account_balance: values.accountBalance,
-      risk_percent: values.riskPercent,
+      risk_percent: actualRiskPercent,
       risk_amount: values.computed.riskAmount,
       entry_price: values.entryPrice,
       stop_loss: values.stopLoss,

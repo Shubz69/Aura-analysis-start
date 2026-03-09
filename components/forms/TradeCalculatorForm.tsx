@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { tradeCalculatorSchema, type TradeCalculatorForm as TradeCalculatorFormValues } from "@/lib/validations/trade";
-import { calculateRisk } from "@/lib/calculators/calculateRisk";
+import { suggestPositionSize, calculateFromFixedSize } from "@/lib/calculators/fixedSizeCalculator";
 import { getInstrumentOrFallback } from "@/lib/instruments";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -64,6 +64,9 @@ export interface ComputedValues {
   checklistPercent: number;
   tradeGrade: string;
   warnings: string[];
+  /** When position size is 0, suggested size from risk % (for "Suggest size" button). */
+  suggestedPositionSize?: number;
+  suggestedPositionUnitLabel?: "lots" | "shares" | "contracts" | "units";
 }
 
 const NO_CHECKLIST_PAYLOAD: ChecklistSavePayload = {
@@ -91,6 +94,7 @@ export function TradeCalculatorForm({
       direction: defaultDirection,
       accountBalance: defaultBalance ?? 10000,
       riskPercent: defaultRisk ?? 1,
+      positionSize: 0,
       entryPrice: 0,
       stopLoss: 0,
       takeProfit: 0,
@@ -103,6 +107,7 @@ export function TradeCalculatorForm({
   const pair = watchValues.pair || "EURUSD";
   const balance = watchValues.accountBalance || 0;
   const riskPercent = watchValues.riskPercent || 0;
+  const positionSizeForm = Number(watchValues.positionSize) || 0;
   const entry = watchValues.entryPrice || 0;
   const stop = watchValues.stopLoss || 0;
   const tp = watchValues.takeProfit || 0;
@@ -135,41 +140,81 @@ export function TradeCalculatorForm({
   const stopPlaceholder = useMemo(() => getStopPlaceholder(pair), [pair]);
   const tpPlaceholder = useMemo(() => getTpPlaceholder(pair), [pair]);
 
+  const positionSizeUnitLabel = useMemo((): "lots" | "shares" | "contracts" | "units" => {
+    const mode = instrumentSpec.calculationMode;
+    if (mode === "stock_share") return "shares";
+    if (mode === "future_contract") return "contracts";
+    if (mode === "crypto_units" || mode === "crypto_lot") return "units";
+    return "lots";
+  }, [instrumentSpec.calculationMode]);
+
   const computed = useMemo((): ComputedValues | null => {
-    if (!entry || !stop || !tp || balance <= 0 || riskPercent <= 0) return null;
-    const result = calculateRisk(pair, {
-      accountBalance: balance,
-      riskPercent,
-      entry,
-      stop,
-      takeProfit: tp,
-      direction,
-    });
-    const stopLossPips = result.stopDistanceAlt ?? result.stopDistancePrice;
-    const takeProfitPips = result.takeProfitDistanceAlt ?? result.takeProfitDistancePrice;
+    if (!entry || !stop || !tp || balance <= 0) return null;
+    const positionSizeNum = positionSizeForm;
+    // Once position size is set, treat as a real placed trade: TP/SL only affect P/L against this fixed size (no resizing).
+    if (positionSizeNum > 0) {
+      const result = calculateFromFixedSize(pair, {
+        accountBalance: balance,
+        entry,
+        stop,
+        takeProfit: tp,
+        positionSize: positionSizeNum,
+        direction,
+      });
+      const stopLossPips = result.stopDistanceAlt ?? result.stopDistancePrice;
+      const takeProfitPips = result.takeProfitDistanceAlt ?? result.takeProfitDistancePrice;
+      return {
+        riskAmount: result.riskAmount,
+        stopDistancePrice: result.stopDistancePrice,
+        takeProfitDistancePrice: result.takeProfitDistancePrice,
+        stopDistanceAlt: result.stopDistanceAlt,
+        takeProfitDistanceAlt: result.takeProfitDistanceAlt,
+        altUnitLabel: result.altUnitLabel,
+        riskReward: result.riskReward,
+        positionSize: result.positionSize,
+        positionUnitLabel: result.positionUnitLabel,
+        potentialProfit: result.potentialProfit,
+        potentialLoss: result.potentialLoss,
+        rMultiple: result.rMultiple,
+        stopLossPips,
+        takeProfitPips,
+        rr: result.riskReward,
+        checklistScore: 0,
+        checklistTotal: 0,
+        checklistPercent: 0,
+        tradeGrade: "—",
+        warnings: result.warnings,
+      };
+    }
+    const suggested = riskPercent > 0 ? suggestPositionSize(pair, { accountBalance: balance, riskPercent, entry, stop, takeProfit: tp, direction }) : null;
+    const fixedZero = calculateFromFixedSize(pair, { accountBalance: balance, entry, stop, takeProfit: tp, positionSize: 0, direction });
+    const stopLossPips = fixedZero.stopDistanceAlt ?? fixedZero.stopDistancePrice;
+    const takeProfitPips = fixedZero.takeProfitDistanceAlt ?? fixedZero.takeProfitDistancePrice;
     return {
-      riskAmount: result.riskAmount,
-      stopDistancePrice: result.stopDistancePrice,
-      takeProfitDistancePrice: result.takeProfitDistancePrice,
-      stopDistanceAlt: result.stopDistanceAlt,
-      takeProfitDistanceAlt: result.takeProfitDistanceAlt,
-      altUnitLabel: result.altUnitLabel,
-      riskReward: result.riskReward,
-      positionSize: result.positionSize,
-      positionUnitLabel: result.positionUnitLabel,
-      potentialProfit: result.potentialProfit,
-      potentialLoss: result.potentialLoss,
-      rMultiple: result.rMultiple,
+      riskAmount: 0,
+      stopDistancePrice: fixedZero.stopDistancePrice,
+      takeProfitDistancePrice: fixedZero.takeProfitDistancePrice,
+      stopDistanceAlt: fixedZero.stopDistanceAlt,
+      takeProfitDistanceAlt: fixedZero.takeProfitDistanceAlt,
+      altUnitLabel: fixedZero.altUnitLabel,
+      riskReward: fixedZero.riskReward,
+      positionSize: 0,
+      positionUnitLabel: fixedZero.positionUnitLabel,
+      potentialProfit: 0,
+      potentialLoss: 0,
+      rMultiple: 0,
       stopLossPips,
       takeProfitPips,
-      rr: result.riskReward,
+      rr: fixedZero.riskReward,
       checklistScore: 0,
       checklistTotal: 0,
       checklistPercent: 0,
       tradeGrade: "—",
-      warnings: result.warnings,
+      warnings: fixedZero.warnings,
+      suggestedPositionSize: suggested?.suggestedPositionSize,
+      suggestedPositionUnitLabel: suggested?.positionUnitLabel,
     };
-  }, [entry, stop, tp, balance, riskPercent, pair, direction]);
+  }, [entry, stop, tp, balance, riskPercent, pair, direction, positionSizeForm]);
 
   useEffect(() => {
     form.setValue("direction", direction);
@@ -269,6 +314,39 @@ export function TradeCalculatorForm({
                 return null;
               })()}
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="positionSize">Position size</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="positionSize"
+                  type="number"
+                  step="any"
+                  min={0}
+                  placeholder={positionSizeUnitLabel === "lots" ? "e.g. 0.10" : positionSizeUnitLabel === "shares" ? "e.g. 100" : "e.g. 1"}
+                  {...form.register("positionSize")}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (computed?.suggestedPositionSize != null && computed.suggestedPositionSize > 0) {
+                      form.setValue("positionSize", computed.suggestedPositionSize);
+                    }
+                  }}
+                  disabled={!(computed?.suggestedPositionSize != null && computed.suggestedPositionSize > 0)}
+                >
+                  Suggest from risk %
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Fixed size used for P/L. Changing SL only affects loss; changing TP only affects profit.
+              </p>
+              {form.formState.errors.positionSize && (
+                <p className="text-xs text-destructive">{form.formState.errors.positionSize.message}</p>
+              )}
+            </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="entryPrice">Entry</Label>
@@ -343,12 +421,12 @@ export function TradeCalculatorForm({
           </CardContent>
         </Card>
 
-        <CalculatorResultPanel pair={pair} computed={computed} instrumentSpec={instrumentSpec} />
+        <CalculatorResultPanel pair={pair} computed={computed} instrumentSpec={instrumentSpec} accountBalance={balance} />
       </div>
 
       {onSave && (
         <div className="pt-2">
-          <Button type="submit" disabled={!computed || saving} className="min-w-[8rem]">
+          <Button type="submit" disabled={!computed || saving || positionSizeForm <= 0} className="min-w-[8rem]">
             {saving ? "Saving…" : "Save trade"}
           </Button>
         </div>

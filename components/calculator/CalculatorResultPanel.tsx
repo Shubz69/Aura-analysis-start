@@ -6,9 +6,15 @@ interface CalculatorResultPanelProps {
   pair: string;
   computed: ComputedValues | null;
   instrumentSpec: { pricePrecision: number };
+  accountBalance?: number;
 }
 
-export function CalculatorResultPanel({ pair, computed, instrumentSpec }: CalculatorResultPanelProps) {
+export function CalculatorResultPanel({ pair, computed, instrumentSpec, accountBalance = 0 }: CalculatorResultPanelProps) {
+  const actualRiskPercent =
+    accountBalance > 0 && computed && computed.riskAmount >= 0
+      ? ((computed.riskAmount / accountBalance) * 100).toFixed(2) + "%"
+      : "—";
+
   return (
     <Card className="glass">
       <CardHeader>
@@ -18,10 +24,16 @@ export function CalculatorResultPanel({ pair, computed, instrumentSpec }: Calcul
         {!pair ? (
           <p className="text-muted-foreground">Select a pair to see instrument-specific labels and calculations.</p>
         ) : !computed ? (
-          <p className="text-muted-foreground">Enter entry, stop loss, and take profit to see risk, position size, and P/L.</p>
+          <p className="text-muted-foreground">Enter entry, stop loss, and take profit to see distances and suggest position size.</p>
         ) : (
           <>
-            <Row label="Risk amount" value={formatCurrencySafe(computed.riskAmount)} />
+            {computed.suggestedPositionSize != null && computed.positionSize === 0 && (
+              <Row
+                label="Suggested size"
+                value={formatPositionSize(computed.suggestedPositionSize, computed.suggestedPositionUnitLabel ?? computed.positionUnitLabel)}
+              />
+            )}
+            <Row label="Position size" value={formatPositionSize(computed.positionSize, computed.positionUnitLabel)} />
             <Row label="Stop distance (price)" value={computed.stopDistancePrice.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: instrumentSpec.pricePrecision })} />
             <Row label="Take profit distance (price)" value={computed.takeProfitDistancePrice.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: instrumentSpec.pricePrecision })} />
             {computed.altUnitLabel != null && computed.stopDistanceAlt != null && computed.takeProfitDistanceAlt != null && (
@@ -31,7 +43,12 @@ export function CalculatorResultPanel({ pair, computed, instrumentSpec }: Calcul
               </>
             )}
             <Row label="Risk:Reward" value={formatRR(computed.riskReward)} />
-            <Row label={`Position size (${computed.positionUnitLabel})`} value={formatPositionSize(computed.positionSize, computed.positionUnitLabel)} />
+            {computed.positionSize > 0 && (
+              <>
+                <Row label="Actual risk amount" value={formatCurrencySafe(computed.riskAmount)} />
+                <Row label="Actual risk %" value={actualRiskPercent} />
+              </>
+            )}
             <Row label="Potential profit" value={formatCurrencySafe(computed.potentialProfit)} className="text-emerald-500" />
             <Row label="Potential loss" value={formatCurrencySafe(computed.potentialLoss)} className="text-red-500" />
             <Row label="R multiple (if TP hit)" value={formatRR(computed.rMultiple)} />
