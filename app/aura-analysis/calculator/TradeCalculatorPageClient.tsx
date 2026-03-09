@@ -86,7 +86,7 @@ export function TradeCalculatorPageClient({
         const err = await res.json().catch(() => ({}));
         const msg =
           res.status === 401
-            ? "Sign in to save trades. Use the login page to sign in, then try again."
+            ? "Saving is unavailable. Ensure at least one user exists in the database to save trades."
             : (err?.error ?? `Save failed (${res.status})`);
         setSaveError(msg);
         setSaving(false);

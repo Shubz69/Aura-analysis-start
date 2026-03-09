@@ -27,7 +27,8 @@ export async function GET(request: NextRequest) {
   const db = dbAdapter();
   try {
     let user = await getCurrentUserFromToken(req, db);
-    if (!user && process.env.NEXT_PUBLIC_BYPASS_AUTH !== "false") {
+    // Allow use without sign-in: use first user in DB when no valid token
+    if (!user) {
       user = await getFallbackUser(db);
     }
     if (!user) {
@@ -64,7 +65,8 @@ export async function POST(request: NextRequest) {
   const db = dbAdapter();
   try {
     let user = await getCurrentUserFromToken(req, db);
-    if (!user && process.env.NEXT_PUBLIC_BYPASS_AUTH !== "false") {
+    // Allow use without sign-in: use first user in DB when no valid token
+    if (!user) {
       user = await getFallbackUser(db);
     }
     if (!user) {
