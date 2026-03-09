@@ -275,7 +275,10 @@ export function JournalClient({ initialTrades, openTradeId }: JournalClientProps
           tradeId={selectedTradeId}
           open={!!selectedTradeId}
           onClose={closeTrade}
-          onDeleted={closeTrade}
+          onDeleted={() => {
+            setTrades(prev => prev.filter(t => t.id !== selectedTradeId));
+            closeTrade();
+          }}
           initialTrade={trades.find((t) => t.id === selectedTradeId) ?? undefined}
         />
       )}

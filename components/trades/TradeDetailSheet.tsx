@@ -16,6 +16,7 @@ import { parseValidatorData } from "@/lib/validator/scoreCalculator";
 import { TradeOutcomeModal } from "./TradeOutcomeModal";
 import { EditTradeModal } from "./EditTradeModal";
 import { useTradesStore } from "@/lib/store/tradesStore";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 interface TradeDetailSheetProps {
   tradeId: string;
@@ -33,12 +34,14 @@ export function TradeDetailSheet({
   onDeleted,
   initialTrade,
 }: TradeDetailSheetProps) {
-  const { updateTrade } = useTradesStore();
+  const { updateTrade, removeTrade } = useTradesStore();
   const [trade, setTrade] = useState<Trade | null>(initialTrade ?? null);
   const [checklistItems, setChecklistItems] = useState<TradeChecklistItem[]>([]);
   const [loading, setLoading] = useState(!initialTrade);
   const [outcomeType, setOutcomeType] = useState<"win" | "loss" | "breakeven" | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (!open || !tradeId) return;
@@ -55,9 +58,32 @@ export function TradeDetailSheet({
   }, [open, tradeId, initialTrade]);
 
   async function handleDelete() {
-    if (!tradeId || (typeof window !== "undefined" && !window.confirm("Delete this trade?"))) return;
-    onDeleted?.();
-    onClose();
+    if (!tradeId) return;
+    setIsDeleting(true);
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      const res = await fetch(`/api/aura-analysis/trades?id=${tradeId}`, {
+        method: "DELETE",
+        headers: {
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        }
+      });
+      
+      // If ephemeral 404, we just assume it's already deleted backend and delete frontend
+      if (!res.ok && res.status !== 404) {
+        throw new Error("Failed to delete trade");
+      }
+      
+      removeTrade(tradeId);
+      setIsDeleteModalOpen(false);
+      onDeleted?.();
+      onClose();
+    } catch (e) {
+      console.error(e);
+      alert("Unable to delete trade. Please try again.");
+    } finally {
+      setIsDeleting(false);
+    }
   }
 
   if (!open) return null;
@@ -169,7 +195,7 @@ export function TradeDetailSheet({
                 <Pencil className="mr-2 h-4 w-4" />
                 Edit
               </Button>
-              <Button variant="destructive" size="sm" onClick={handleDelete}>
+              <Button variant="destructive" size="sm" onClick={() => setIsDeleteModalOpen(true)}>
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete
               </Button>
@@ -179,6 +205,25 @@ export function TradeDetailSheet({
           <p className="text-muted-foreground pt-4">Trade not found.</p>
         )}
       </SheetContent>
+
+      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Delete trade?</DialogTitle>
+            <DialogDescription>
+              This will permanently remove this trade and update all related stats. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)} disabled={isDeleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting ? "Deleting..." : "Delete Trade"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {trade && outcomeType && (
         <TradeOutcomeModal

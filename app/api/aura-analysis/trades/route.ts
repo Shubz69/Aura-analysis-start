@@ -242,3 +242,46 @@ export async function PATCH(request: NextRequest) {
     );
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  const db = dbAdapter();
+  try {
+    const user = await getAuthUser(request, db);
+    if (!user) {
+      return NextResponse.json({ error: "Authentication required" }, { status: 401, headers: { "Cache-Control": "no-store" } });
+    }
+    if (BLOCKED_ROLES.includes(user.role)) {
+      return NextResponse.json({ error: "Access denied" }, { status: 403, headers: { "Cache-Control": "no-store" } });
+    }
+    
+    const { searchParams } = new URL(request.url);
+    const tradeId = searchParams.get("id");
+
+    if (!tradeId) {
+      return NextResponse.json(
+        { error: "Trade ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const { deleteTrade } = await import("@/lib/data/trades");
+    const success = await deleteTrade(String(user.id), tradeId);
+
+    if (!success) {
+      return NextResponse.json(
+        { error: "Trade not found or failed to delete." },
+        { status: 404 }
+      );
+    }
+    return NextResponse.json({ success: true }, {
+      status: 200,
+      headers: { "Cache-Control": "no-store" },
+    });
+  } catch (err) {
+    console.error("DELETE /api/aura-analysis/trades", err);
+    return NextResponse.json(
+      { error: "Server error" },
+      { status: 500 }
+    );
+  }
+}
