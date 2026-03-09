@@ -347,7 +347,7 @@ export function TradeCalculatorForm({
                 <Row label={`Stop loss (${assetConfig.distanceType === "pip" ? "pips" : assetConfig.distanceType === "point" ? "pts" : "units"})`} value={formatDistance(computed.stopLossPips, assetConfig.distanceType, 1)} />
                 <Row label={`Take profit (${assetConfig.distanceType === "pip" ? "pips" : assetConfig.distanceType === "point" ? "pts" : "units"})`} value={formatDistance(computed.takeProfitPips, assetConfig.distanceType, 1)} />
                 <Row label="Risk:reward" value={formatRR(computed.rr)} />
-                <Row label={`Position size (${getPositionSizeKind(assetConfig.assetClass)})`} value={formatPositionSize(computed.positionSize, getPositionSizeKind(assetConfig.assetClass), 4)} />
+                <Row label={`Position size (${getPositionSizeKind(assetConfig.assetClass)})`} value={formatPositionSize(computed.positionSize, getPositionSizeKind(assetConfig.assetClass))} />
                 <Row label="Potential profit" value={formatCurrencySafe(computed.potentialProfit)} className="text-emerald-500" />
                 <Row label="Potential loss" value={formatCurrencySafe(computed.potentialLoss)} className="text-red-500" />
                 <Row label="R multiple (if TP hit)" value={formatRR(computed.rMultiple)} />

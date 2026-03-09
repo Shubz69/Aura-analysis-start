@@ -56,14 +56,17 @@ export function formatRR(value: number, decimals = 2): string {
   return v.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
-/** Position size: lots / contracts / units. */
+/** Position size: lots / contracts / units. Uses max 2 decimals; omits decimals when whole number. */
 export function formatPositionSize(
   value: number,
   kind: "lots" | "contracts" | "units" = "lots",
-  decimals = 2
+  _decimals?: number
 ): string {
   const v = safeNum(value, 0);
-  const s = v.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  const isWhole = Number.isInteger(v) || Math.abs(v - Math.round(v * 100) / 100) < 1e-9;
+  const s = isWhole
+    ? v.toLocaleString("en-US", { maximumFractionDigits: 0 })
+    : v.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
   if (kind === "lots") return `${s} lots`;
   if (kind === "contracts") return `${s} contracts`;
   return `${s} units`;

@@ -8,7 +8,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { formatCurrencySafe, formatNumber } from "@/lib/utils";
+import { formatCurrencySafe, formatNumber, formatPositionSize, getPositionSizeKind } from "@/lib/utils";
 import type { Trade, TradeChecklistItem } from "@/types";
 import { Pencil, Trash2 } from "lucide-react";
 
@@ -80,7 +80,7 @@ export function TradeDetailSheet({
               <LabelValue label="Take profit" value={formatNumber(trade.take_profit)} />
               <LabelValue label="Risk %" value={`${trade.risk_percent}%`} />
               <LabelValue label="Risk amount" value={formatCurrencySafe(trade.risk_amount)} />
-              <LabelValue label="Position size" value={formatNumber(trade.position_size, 4)} />
+              <LabelValue label="Position size" value={formatPositionSize(trade.position_size, getPositionSizeKind(trade.asset_class))} />
               <LabelValue label="R:R" value={formatNumber(trade.rr, 2)} />
               <LabelValue label="PnL" value={formatCurrencySafe(trade.pnl)} className={trade.pnl >= 0 ? "text-emerald-500" : "text-red-500"} />
               <LabelValue label="R multiple" value={formatNumber(trade.r_multiple, 2)} />
