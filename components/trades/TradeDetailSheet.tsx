@@ -84,9 +84,37 @@ export function TradeDetailSheet({
               <LabelValue label="R:R" value={formatNumber(trade.rr, 2)} />
               <LabelValue label="PnL" value={formatCurrencySafe(trade.pnl)} className={trade.pnl >= 0 ? "text-emerald-500" : "text-red-500"} />
               <LabelValue label="R multiple" value={formatNumber(trade.r_multiple, 2)} />
-              <LabelValue label="Checklist" value={`${trade.checklist_score}/${trade.checklist_total} (${trade.checklist_percent}%)`} />
+              <LabelValue label="Checklist" value={`${trade.checklist_percent}%`} />
               <LabelValue label="Grade" value={trade.trade_grade ?? "—"} />
             </div>
+            
+            {(() => {
+              const vd = typeof trade.validator_data === "string" 
+                ? (function() { try { return JSON.parse(trade.validator_data); } catch { return null; } })() 
+                : trade.validator_data;
+                
+              if (!vd || !vd.checklistState) return null;
+              
+              const entries = Object.entries(vd.checklistState) as [string, boolean][];
+              if (entries.length === 0) return null;
+              
+              return (
+                <div>
+                  <h4 className="font-medium text-sm mb-2">Validator Checklist</h4>
+                  <ul className="space-y-1 text-sm">
+                    {entries.map(([key, passed]) => (
+                      <li key={key} className="flex items-center gap-2">
+                        <span className={passed ? "text-emerald-500" : "text-red-500"}>
+                          {passed ? "✓" : "✗"}
+                        </span>
+                        {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })()}
+
             {checklistItems.length > 0 && (
               <div>
                 <h4 className="font-medium text-sm mb-2">Checklist</h4>

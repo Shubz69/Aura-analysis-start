@@ -54,6 +54,7 @@ export interface Trade {
   checklist_total: number;
   checklist_percent: number;
   trade_grade: string | null;
+  validator_data?: string | null;
   notes: string | null;
   created_at: string;
 }

@@ -37,6 +37,7 @@ export interface TradeRow {
   checklist_total: number;
   checklist_percent: number;
   trade_grade: string | null;
+  validator_data: string | null;
   notes: string | null;
   created_at: string;
 }
@@ -89,6 +90,7 @@ export interface InsertTradeBody {
   checklist_total: number;
   checklist_percent: number;
   trade_grade: string;
+  validator_data?: string | null;
   notes?: string | null;
 }
 
@@ -122,6 +124,7 @@ export async function insertTrade(
     Number(body.checklist_total) || 0,
     Number(body.checklist_percent) || 0,
     body.trade_grade ?? "C",
+    body.validator_data ?? null,
     body.notes ?? null,
   ];
 
@@ -131,8 +134,8 @@ export async function insertTrade(
         user_id, pair, asset_id, asset_class, direction, session,
         account_balance, risk_percent, risk_amount, entry_price, stop_loss, take_profit,
         stop_loss_pips, take_profit_pips, rr, position_size, potential_profit, potential_loss,
-        result, pnl, r_multiple, checklist_score, checklist_total, checklist_percent, trade_grade, notes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        result, pnl, r_multiple, checklist_score, checklist_total, checklist_percent, trade_grade, validator_data, notes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       insertParams
     );
     const insertId = (result as { insertId?: number })?.insertId;
@@ -173,6 +176,7 @@ export async function insertTrade(
     checklist_total: Number(body.checklist_total) || 0,
     checklist_percent: Number(body.checklist_percent) || 0,
     trade_grade: body.trade_grade ?? "C",
+    validator_data: body.validator_data ?? null,
     notes: body.notes ?? null,
     created_at: new Date().toISOString(),
   };

@@ -28,6 +28,8 @@ interface TradeCalculatorFormProps {
   assets: Asset[];
   defaultBalance?: number | null;
   defaultRisk?: number | null;
+  defaultPair?: string;
+  defaultDirection?: "buy" | "sell";
   onSave?: (values: TradeCalculatorFormValues & { computed: ComputedValues; checklist: ChecklistSavePayload }) => void;
   saving?: boolean;
 }
@@ -75,15 +77,17 @@ export function TradeCalculatorForm({
   assets,
   defaultBalance = 10000,
   defaultRisk = 1,
+  defaultPair = "EURUSD",
+  defaultDirection = "buy",
   onSave,
   saving = false,
 }: TradeCalculatorFormProps) {
-  const [direction, setDirection] = useState<"buy" | "sell">("buy");
+  const [direction, setDirection] = useState<"buy" | "sell">(defaultDirection);
   const form = useForm<TradeCalculatorFormValues>({
     resolver: zodResolver(tradeCalculatorSchema),
     defaultValues: {
-      pair: "EURUSD",
-      direction: "buy",
+      pair: defaultPair,
+      direction: defaultDirection,
       accountBalance: defaultBalance ?? 10000,
       riskPercent: defaultRisk ?? 1,
       entryPrice: 0,

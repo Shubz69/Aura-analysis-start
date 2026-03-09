@@ -17,7 +17,9 @@ import {
   getSectionScore,
 } from "@/lib/validator/checklistSections";
 import { cn } from "@/lib/utils";
-import { ClipboardCheck, TrendingUp } from "lucide-react";
+import { ClipboardCheck, TrendingUp, AlertTriangle } from "lucide-react";
+import { useDraftTradeStore } from "@/lib/store/draftTradeStore";
+import { Button } from "@/components/ui/button";
 
 const STORAGE_KEY = "aura-trade-validator-checked";
 
@@ -47,7 +49,7 @@ const SCORE_REDIRECT_THRESHOLD = 70;
 export function TradeValidator() {
   const router = useRouter();
   const [checked, setChecked] = useState<Set<string>>(loadChecked);
-  const prevScoreRef = useRef<number | null>(null);
+  const createDraftFromValidator = useDraftTradeStore((state) => state.createDraftFromValidator);
 
   const pointsByItemId = useMemo(() => getPointsByItemId(), []);
   const totalScore = useMemo(
@@ -55,16 +57,19 @@ export function TradeValidator() {
       calculateTotalScore(checked, pointsByItemId, TOTAL_POINTS),
     [checked, pointsByItemId]
   );
-  const label = useMemo(() => getScoreLabel(totalScore), [totalScore]);
+  
+  const getQualityLabel = (score: number) => {
+    if (score >= 90) return "A+ Setup";
+    if (score >= 80) return "High Probability";
+    if (score >= 70) return "Good Setup";
+    if (score >= 60) return "Moderate";
+    if (score >= 40) return "Risky";
+    return "No Trade";
+  };
+  
+  const label = useMemo(() => getQualityLabel(totalScore), [totalScore]);
   const clampedScore = clampPercent(totalScore);
-
-  useEffect(() => {
-    const prev = prevScoreRef.current;
-    prevScoreRef.current = totalScore;
-    if (prev !== null && prev < SCORE_REDIRECT_THRESHOLD && totalScore >= SCORE_REDIRECT_THRESHOLD) {
-      router.push("/aura-analysis/calculator");
-    }
-  }, [totalScore, router]);
+  const canProceed = clampedScore >= 70;
 
   const handleToggle = (id: string) => {
     setChecked((prev) => {
@@ -74,6 +79,34 @@ export function TradeValidator() {
       saveChecked(next);
       return next;
     });
+  };
+
+  const handleProceed = () => {
+    if (!canProceed) return;
+    
+    const checklistState: Record<string, boolean> = {};
+    checked.forEach(id => {
+      checklistState[id] = true;
+    });
+    
+    const sectionScores: Record<string, number> = {};
+    CHECKLIST_SECTIONS.forEach(section => {
+      sectionScores[section.id] = getSectionScore(section, checked);
+    });
+
+    createDraftFromValidator(
+      "EURUSD", // default symbol, user can change later in calculator
+      undefined, // direction unknown at this point
+      {
+        score: clampedScore,
+        status: label,
+        checklistState,
+        sectionScores,
+        completedAt: new Date().toISOString(),
+      }
+    );
+    
+    router.push("/aura-analysis/calculator");
   };
 
   return (
@@ -143,6 +176,31 @@ export function TradeValidator() {
             sectionScore={getSectionScore(section, checked)}
           />
         ))}
+      </div>
+
+      <div className="sticky bottom-0 z-10 -mx-4 mt-8 flex flex-col items-center justify-between gap-4 border-t bg-background/95 p-4 py-4 px-4 backdrop-blur sm:flex-row sm:px-6">
+        <div>
+          {canProceed ? (
+            <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">
+              Score meets minimum requirement (70%).
+            </p>
+          ) : (
+            <div className="flex items-center gap-2 text-amber-600 dark:text-amber-500">
+              <AlertTriangle className="h-4 w-4" />
+              <p className="text-sm font-medium">
+                This trade does not meet the minimum confluence requirement (70%).
+              </p>
+            </div>
+          )}
+        </div>
+        <Button
+          onClick={handleProceed}
+          disabled={!canProceed}
+          size="lg"
+          className="w-full sm:w-auto"
+        >
+          Use in Trade Calculator
+        </Button>
       </div>
     </div>
   );

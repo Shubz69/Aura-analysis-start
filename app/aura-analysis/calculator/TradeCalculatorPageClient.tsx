@@ -16,7 +16,10 @@ import {
 } from "@/components/forms/TradeCalculatorForm";
 import type { TradeCalculatorForm as TradeCalculatorFormType } from "@/lib/validations/trade";
 import type { Asset } from "@/types";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { useDraftTradeStore } from "@/lib/store/draftTradeStore";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 interface TradeCalculatorPageClientProps {
   assets: Asset[];
@@ -34,6 +37,10 @@ export function TradeCalculatorPageClient({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const router = useRouter();
+  
+  const draft = useDraftTradeStore((state) => state.draft);
+  const clearDraftTrade = useDraftTradeStore((state) => state.clearDraftTrade);
+  const hasValidDraft = draft?.validator && draft.validator.score >= 70;
 
   async function handleSave(
     values: TradeCalculatorFormType & {
@@ -70,11 +77,13 @@ export function TradeCalculatorPageClient({
       result: "open",
       pnl: 0,
       r_multiple: 0,
-      checklist_score: values.checklist.checklistScore,
-      checklist_total: values.checklist.checklistTotal,
-      checklist_percent: values.checklist.checklistPercent,
-      trade_grade: values.checklist.tradeGrade,
+      checklist_score: draft?.validator?.score ?? 0,
+      checklist_total: 100, // Total possible percentage
+      checklist_percent: draft?.validator?.score ?? 0,
+      trade_grade: draft?.validator?.status ?? "—",
+      validator_data: draft?.validator ?? null,
       notes: values.notes || null,
+      source: "validator+calculator",
     };
     setSaveError(null);
     try {
@@ -98,6 +107,7 @@ export function TradeCalculatorPageClient({
         return;
       }
       // Redirect to dashboard so updated numbers (KPIs, charts) are visible
+      clearDraftTrade();
       router.push("/aura-analysis");
       router.refresh();
     } catch (e) {
@@ -109,6 +119,39 @@ export function TradeCalculatorPageClient({
 
   return (
     <div className="space-y-4">
+      {!hasValidDraft ? (
+        <div className="flex flex-col gap-4 rounded-lg border border-amber-500/50 bg-amber-500/10 p-6 text-center md:flex-row md:items-center md:justify-between md:text-left">
+          <div>
+            <h3 className="font-semibold text-amber-800 dark:text-amber-200">
+              Complete Trade Validator before submitting a trade
+            </h3>
+            <p className="text-sm text-amber-700/80 dark:text-amber-300/80">
+              A minimum confluence score of 70% is required to execute trades.
+            </p>
+          </div>
+          <Button asChild variant="outline" className="border-amber-500/50 text-amber-700 hover:bg-amber-500/20 dark:text-amber-300">
+            <Link href="/aura-analysis/validator">Go to Trade Validator</Link>
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4 rounded-lg border border-emerald-500/50 bg-emerald-500/10 p-6 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+            <div>
+              <h3 className="font-semibold text-emerald-800 dark:text-emerald-200">
+                Validated Trade
+              </h3>
+              <p className="text-sm text-emerald-700/80 dark:text-emerald-300/80">
+                Score: {draft.validator!.score}% • Status: {draft.validator!.status} • Passed threshold: Yes
+              </p>
+            </div>
+          </div>
+          <Button asChild variant="outline" size="sm" className="border-emerald-500/50 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-300">
+            <Link href="/aura-analysis/validator">Edit Validator</Link>
+          </Button>
+        </div>
+      )}
+
       {saveError && (
         <div className="flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm text-destructive">
           <AlertCircle className="h-4 w-4 shrink-0" />
@@ -117,9 +160,11 @@ export function TradeCalculatorPageClient({
       )}
       <TradeCalculatorForm
         assets={assets}
-        defaultBalance={defaultBalance}
-        defaultRisk={defaultRisk}
-        onSave={handleSave}
+        defaultBalance={draft?.calculator?.accountBalance ?? defaultBalance}
+        defaultRisk={draft?.calculator?.riskPercent ?? defaultRisk}
+        defaultPair={draft?.symbol}
+        defaultDirection={draft?.direction}
+        onSave={hasValidDraft ? handleSave : undefined}
         saving={saving}
       />
     </div>

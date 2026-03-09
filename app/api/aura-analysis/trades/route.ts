@@ -138,12 +138,18 @@ export async function POST(request: NextRequest) {
           checklist_score INT DEFAULT 0,
           checklist_total INT DEFAULT 0,
           checklist_percent DECIMAL(8,2) DEFAULT 0,
-          trade_grade VARCHAR(10) DEFAULT NULL,
+          trade_grade VARCHAR(50) DEFAULT NULL,
+          validator_data JSON DEFAULT NULL,
           notes TEXT DEFAULT NULL,
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         )
       `);
+      // Try to alter table if columns are missing or too small
+      await db.query(`ALTER TABLE aura_analysis_trades MODIFY COLUMN trade_grade VARCHAR(50)`);
+      try {
+        await db.query(`ALTER TABLE aura_analysis_trades ADD COLUMN validator_data JSON DEFAULT NULL`);
+      } catch (e) { /* ignore if exists */ }
     } catch (err) {
       console.warn("Auto-migrate trades table failed", err);
     }
@@ -174,6 +180,7 @@ export async function POST(request: NextRequest) {
         checklist_total: Number(body.checklist_total) ?? 0,
         checklist_percent: Number(body.checklist_percent) ?? 0,
         trade_grade: body.trade_grade ?? "C",
+        validator_data: body.validator_data ? JSON.stringify(body.validator_data) : null,
         notes: body.notes ?? null,
       });
     } catch (e) {
