@@ -1,6 +1,7 @@
 /**
- * Trade Validator – 8 checklist sections with reference images and point values.
- * Images live in /assets/trading-checklist/
+ * Trade Validator – Two-layer checklist sections.
+ * Layer 1: Core Confluence Checklist
+ * Layer 2: Setup Formation Checklist
  */
 
 export interface ChecklistItem {
@@ -11,13 +12,14 @@ export interface ChecklistItem {
 
 export interface ChecklistSectionConfig {
   id: string;
+  layer: "core" | "formation";
   title: string;
-  imagePath: string;
+  timeframeLabel: string;
+  imagePath?: string;
   maxPoints: number;
   items: ChecklistItem[];
 }
 
-/** Sub-pattern for Section 6 (Pattern Setup). */
 export interface PatternSubSection {
   id: string;
   title: string;
@@ -26,8 +28,10 @@ export interface PatternSubSection {
 
 export interface PatternSectionConfig {
   id: string;
+  layer: "core" | "formation";
   title: string;
-  imagePath: string;
+  timeframeLabel: string;
+  imagePath?: string;
   maxPoints: number;
   subPatterns: PatternSubSection[];
 }
@@ -41,162 +45,181 @@ export function isPatternSection(s: SectionConfig): s is PatternSectionConfig {
 const BASE_IMAGE = "/assets/trading-checklist";
 
 export const CHECKLIST_SECTIONS: SectionConfig[] = [
+  // --------------------------------------------------
+  // LAYER 1: CORE CONFLUENCE CHECKLIST
+  // --------------------------------------------------
   {
     id: "htf-bias",
+    layer: "core",
     title: "Higher Timeframe Bias",
-    imagePath: `${BASE_IMAGE}/trend-structure.png`,
-    maxPoints: 25,
+    timeframeLabel: "Weekly + Daily",
+    maxPoints: 40,
     items: [
-      { id: "htf-1", label: "Weekly trend identified", points: 7 },
-      { id: "htf-2", label: "Daily trend aligned", points: 6 },
-      { id: "htf-3", label: "Higher highs / higher lows visible", points: 6 },
-      { id: "htf-4", label: "Price aligned with HTF EMA", points: 6 },
+      { id: "htf-1", label: "Weekly trend direction identified", points: 10 },
+      { id: "htf-2", label: "Daily trend aligned with weekly bias", points: 10 },
+      { id: "htf-3", label: "Price trading above/below major HTF structure", points: 8 },
+      { id: "htf-4", label: "Clear higher highs / lower lows on HTF", points: 6 },
+      { id: "htf-5", label: "No major HTF barrier directly ahead", points: 6 },
     ],
   },
   {
-    id: "liquidity",
-    title: "Liquidity Sweep",
-    imagePath: `${BASE_IMAGE}/liquidity-sweep.png`,
+    id: "key-location",
+    layer: "core",
+    title: "Key Location",
+    timeframeLabel: "Daily + 4H",
+    maxPoints: 35,
+    items: [
+      { id: "kl-1", label: "Price reacting at supply / demand zone", points: 10 },
+      { id: "kl-2", label: "Previous support/resistance respected", points: 8 },
+      { id: "kl-3", label: "Psychological level nearby (00 / 50 levels)", points: 6 },
+      { id: "kl-4", label: "Premium / discount zone within range", points: 5 },
+      { id: "kl-5", label: "HTF liquidity pool nearby", points: 6 },
+    ],
+  },
+  {
+    id: "liquidity-intent",
+    layer: "core",
+    title: "Liquidity & Market Intent",
+    timeframeLabel: "4H + 1H",
+    maxPoints: 30,
+    items: [
+      { id: "liq-1", label: "Equal highs / equal lows present", points: 6 },
+      { id: "liq-2", label: "Liquidity sweep occurred", points: 8 },
+      { id: "liq-3", label: "Stop hunt / false breakout visible", points: 6 },
+      { id: "liq-4", label: "Strong rejection after sweep", points: 5 },
+      { id: "liq-5", label: "Displacement move after liquidity grab", points: 5 },
+    ],
+  },
+  {
+    id: "market-structure",
+    layer: "core",
+    title: "Market Structure",
+    timeframeLabel: "1H + 30m",
+    maxPoints: 30,
+    items: [
+      { id: "ms-1", label: "Break of structure (BOS)", points: 8 },
+      { id: "ms-2", label: "Change of character (CHOCH)", points: 7 },
+      { id: "ms-3", label: "Momentum candle break", points: 6 },
+      { id: "ms-4", label: "Market compression before breakout", points: 4 },
+      { id: "ms-5", label: "Clear continuation structure", points: 5 },
+    ],
+  },
+  {
+    id: "entry-confirmation",
+    layer: "core",
+    title: "Entry Confirmation",
+    timeframeLabel: "15m + 5m + 1m",
     maxPoints: 20,
     items: [
-      { id: "liq-1", label: "Equal highs or equal lows present", points: 5 },
-      { id: "liq-2", label: "Liquidity sweep occurs", points: 5 },
-      { id: "liq-3", label: "Strong rejection after sweep", points: 5 },
-      { id: "liq-4", label: "Entry positioned after sweep", points: 5 },
+      { id: "ec-1", label: "Engulfing candle", points: 5 },
+      { id: "ec-2", label: "Strong rejection wick", points: 4 },
+      { id: "ec-3", label: "Momentum candle", points: 4 },
+      { id: "ec-4", label: "Volume expansion", points: 4 },
+      { id: "ec-5", label: "Entry within active session (London / NY)", points: 3 },
     ],
   },
   {
-    id: "supply-demand",
-    title: "Supply / Demand Zone",
-    imagePath: `${BASE_IMAGE}/supply-demand.png`,
+    id: "risk-management",
+    layer: "core",
+    title: "Risk Management",
+    timeframeLabel: "Execution / Trade Plan",
     maxPoints: 15,
     items: [
-      { id: "sd-1", label: "Strong impulsive move from zone", points: 4 },
-      { id: "sd-2", label: "Zone not mitigated", points: 4 },
-      { id: "sd-3", label: "Price returns to zone", points: 4 },
-      { id: "sd-4", label: "Reaction inside zone", points: 3 },
+      { id: "rm-1", label: "Minimum risk reward 1:3", points: 4 },
+      { id: "rm-2", label: "Stop loss placed at logical structure", points: 3 },
+      { id: "rm-3", label: "Trade aligns with higher timeframe bias", points: 3 },
+      { id: "rm-4", label: "Position size calculated correctly", points: 3 },
+      { id: "rm-5", label: "Clear invalidation level defined", points: 2 },
     ],
   },
+
+  // --------------------------------------------------
+  // LAYER 2: SETUP FORMATION CHECKLIST (Max 30%)
+  // --------------------------------------------------
   {
-    id: "bos",
-    title: "Break of Structure",
-    imagePath: `${BASE_IMAGE}/break-of-structure.png`,
-    maxPoints: 15,
-    items: [
-      { id: "bos-1", label: "Previous swing high/low broken", points: 5 },
-      { id: "bos-2", label: "Momentum candle break", points: 5 },
-      { id: "bos-3", label: "Close beyond structure", points: 5 },
-    ],
-  },
-  {
-    id: "break-retest",
-    title: "Break and Retest",
-    imagePath: `${BASE_IMAGE}/break-retest.png`,
-    maxPoints: 10,
-    items: [
-      { id: "br-1", label: "Price returns to broken structure", points: 4 },
-      { id: "br-2", label: "Level flips support/resistance", points: 3 },
-      { id: "br-3", label: "Entry after rejection candle", points: 3 },
-    ],
-  },
-  {
-    id: "pattern",
-    title: "Pattern Setup",
+    id: "setup-formation",
+    layer: "formation",
+    title: "Setup Formation",
+    timeframeLabel: "Depends on setup / pattern",
     imagePath: `${BASE_IMAGE}/falling-wedge.png`,
-    maxPoints: 10,
+    maxPoints: 30,
     subPatterns: [
+      {
+        id: "pattern-br",
+        title: "Break and Retest",
+        items: [
+          { id: "form-br1", label: "Price returns to broken structure", points: 4 },
+          { id: "form-br2", label: "Level flips support/resistance", points: 4 },
+        ],
+      },
+      {
+        id: "pattern-sd",
+        title: "Supply / Demand Reaction",
+        items: [
+          { id: "form-sd1", label: "Strong impulsive move from zone", points: 3 },
+          { id: "form-sd2", label: "Reaction inside zone", points: 3 },
+        ],
+      },
+      {
+        id: "pattern-trendline",
+        title: "Trendline Break",
+        items: [
+          { id: "form-tl1", label: "Trendline cleanly broken", points: 2 },
+          { id: "form-tl2", label: "Retest of broken trendline", points: 2 },
+        ],
+      },
+      {
+        id: "pattern-wedge",
+        title: "Wedge / Triangle",
+        items: [
+          { id: "form-w1", label: "Converging trendlines formed", points: 2 },
+          { id: "form-w2", label: "Breakout confirmed", points: 2 },
+        ],
+      },
       {
         id: "pattern-elliott",
         title: "Elliott Wave",
         items: [
-          { id: "pe-1", label: "Clear wave structure visible", points: 2 },
-          { id: "pe-2", label: "Correct wave count", points: 2 },
+          { id: "form-ew1", label: "Clear wave structure visible", points: 2 },
+          { id: "form-ew2", label: "Correct wave count", points: 2 },
         ],
-      },
-      {
-        id: "pattern-rising",
-        title: "Rising Wedge",
-        items: [
-          { id: "pr-1", label: "Converging trendlines", points: 1.5 },
-          { id: "pr-2", label: "Break of wedge confirmed", points: 1.5 },
-        ],
-      },
-      {
-        id: "pattern-falling",
-        title: "Falling Wedge",
-        items: [
-          { id: "pf-1", label: "Converging trendlines", points: 1.5 },
-          { id: "pf-2", label: "Break of wedge confirmed", points: 1.5 },
-        ],
-      },
-    ],
-  },
-  {
-    id: "entry",
-    title: "Entry Confirmation",
-    imagePath: `${BASE_IMAGE}/entry-confirmation.png`,
-    maxPoints: 3,
-    items: [
-      { id: "ent-1", label: "Engulfing candle", points: 1 },
-      { id: "ent-2", label: "Pin bar rejection", points: 1 },
-      { id: "ent-3", label: "Momentum candle", points: 1 },
-    ],
-  },
-  {
-    id: "risk",
-    title: "Risk Management",
-    imagePath: `${BASE_IMAGE}/risk.png`,
-    maxPoints: 2,
-    items: [
-      { id: "risk-1", label: "Minimum Risk Reward 1:3", points: 1 },
-      { id: "risk-2", label: "Stop loss below structure", points: 0.5 },
-      { id: "risk-3", label: "Trade aligns with HTF bias", points: 0.5 },
+      }
     ],
   },
 ];
 
-/** All item ids with their point values (for score calculation). Total points = 100. */
-export function getPointsByItemId(): Map<string, number> {
-  const map = new Map<string, number>();
-  for (const section of CHECKLIST_SECTIONS) {
+export const TOTAL_POINTS = CHECKLIST_SECTIONS.reduce((acc, section) => acc + section.maxPoints, 0);
+
+export function getPointsByItemId(): Record<string, number> {
+  const map: Record<string, number> = {};
+  CHECKLIST_SECTIONS.forEach((section) => {
     if (isPatternSection(section)) {
-      for (const sub of section.subPatterns) {
-        for (const item of sub.items) {
-          map.set(item.id, item.points);
-        }
-      }
+      section.subPatterns.forEach((sub) => {
+        sub.items.forEach((item) => {
+          map[item.id] = item.points;
+        });
+      });
     } else {
-      for (const item of section.items) {
-        map.set(item.id, item.points);
-      }
+      section.items.forEach((item) => {
+        map[item.id] = item.points;
+      });
     }
-  }
+  });
   return map;
 }
 
-export const TOTAL_POINTS = 100;
-
-/** All items in a section (flat for pattern section with subPatterns). */
-export function getSectionItems(
-  section: ChecklistSectionConfig | PatternSectionConfig
-): ChecklistItem[] {
+export function getSectionScore(section: SectionConfig, checked: Set<string>): number {
+  let score = 0;
   if (isPatternSection(section)) {
-    return section.subPatterns.flatMap((p) => p.items);
+    section.subPatterns.forEach((sub) => {
+      sub.items.forEach((item) => {
+        if (checked.has(item.id)) score += item.points;
+      });
+    });
+  } else {
+    section.items.forEach((item) => {
+      if (checked.has(item.id)) score += item.points;
+    });
   }
-  return section.items;
-}
-
-/** Section score 0–100 from checked set. */
-export function getSectionScore(
-  section: ChecklistSectionConfig | PatternSectionConfig,
-  checked: Set<string>
-): number {
-  const items = getSectionItems(section);
-  const maxPoints = section.maxPoints;
-  if (maxPoints <= 0) return 0;
-  const earned = items.reduce(
-    (sum, item) => sum + (checked.has(item.id) ? item.points : 0),
-    0
-  );
-  return Math.round((earned / maxPoints) * 100);
+  return Math.min(score, section.maxPoints);
 }

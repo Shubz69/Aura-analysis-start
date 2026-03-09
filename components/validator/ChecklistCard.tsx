@@ -67,7 +67,17 @@ function ChecklistItemRow({
   );
 }
 
-function ReferenceImage({ src, alt }: { src: string; alt: string }) {
+function ReferenceImage({ src, alt }: { src?: string; alt: string }) {
+  if (!src) {
+    return (
+      <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-muted/60">
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/80">
+          <ImageIcon className="h-10 w-10 text-muted-foreground" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-muted/60">
       <Image
@@ -119,6 +129,11 @@ export function ChecklistCard({
         <h3 className="text-lg font-semibold text-primary">
           {section.title}
         </h3>
+        {section.timeframeLabel && (
+          <p className="text-sm text-muted-foreground">
+            Timeframes: {section.timeframeLabel}
+          </p>
+        )}
       </CardHeader>
       <CardContent className="space-y-1 pt-0">
         {isPatternSection(section) ? (

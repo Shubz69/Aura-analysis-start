@@ -58,16 +58,7 @@ export function TradeValidator() {
     [checked, pointsByItemId]
   );
   
-  const getQualityLabel = (score: number) => {
-    if (score >= 90) return "A+ Setup";
-    if (score >= 80) return "High Probability";
-    if (score >= 70) return "Good Setup";
-    if (score >= 60) return "Moderate";
-    if (score >= 40) return "Risky";
-    return "No Trade";
-  };
-  
-  const label = useMemo(() => getQualityLabel(totalScore), [totalScore]);
+  const label = useMemo(() => getScoreLabel(totalScore), [totalScore]);
   const clampedScore = clampPercent(totalScore);
   const canProceed = clampedScore >= 70;
 
@@ -141,7 +132,10 @@ export function TradeValidator() {
                 >
                   {totalScore}%
                 </span>
-                <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                <span className="text-xl font-medium text-muted-foreground self-end mb-1">
+                  / 200%
+                </span>
+                <span className="flex items-center gap-1 text-sm text-muted-foreground ml-2">
                   <TrendingUp className="h-4 w-4" />
                   Status
                 </span>
@@ -160,22 +154,46 @@ export function TradeValidator() {
               </p>
             </div>
             <div className="w-full sm:w-64">
-              <ProgressBar value={clampedScore} />
+              <ProgressBar value={clampedScore} max={200} />
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-        {CHECKLIST_SECTIONS.map((section) => (
-          <ChecklistCard
-            key={section.id}
-            section={section}
-            checked={checked}
-            onToggle={handleToggle}
-            sectionScore={getSectionScore(section, checked)}
-          />
-        ))}
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-xl font-bold tracking-tight">CORE CONFLUENCE CHECKLIST</h2>
+          <p className="text-sm text-muted-foreground">This is the main decision layer</p>
+        </div>
+        <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          {CHECKLIST_SECTIONS.filter(s => s.layer === "core").map((section) => (
+            <ChecklistCard
+              key={section.id}
+              section={section}
+              checked={checked}
+              onToggle={handleToggle}
+              sectionScore={getSectionScore(section, checked)}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-4 pt-6 border-t">
+        <div>
+          <h2 className="text-xl font-bold tracking-tight">SETUP FORMATION CHECKLIST</h2>
+          <p className="text-sm text-muted-foreground">This is supporting confirmation, not primary confirmation</p>
+        </div>
+        <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          {CHECKLIST_SECTIONS.filter(s => s.layer === "formation").map((section) => (
+            <ChecklistCard
+              key={section.id}
+              section={section}
+              checked={checked}
+              onToggle={handleToggle}
+              sectionScore={getSectionScore(section, checked)}
+            />
+          ))}
+        </div>
       </div>
 
       <div className="sticky bottom-0 z-10 -mx-4 mt-8 flex flex-col items-center justify-between gap-4 border-t bg-background/95 p-4 py-4 px-4 backdrop-blur sm:flex-row sm:px-6">
