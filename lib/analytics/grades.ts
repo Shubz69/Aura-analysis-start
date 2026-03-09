@@ -4,12 +4,7 @@
  * Numeric grade for averaging: A+ = 4, A = 3, B = 2, C = 1.
  */
 import type { Trade } from "@/types";
-
-const RESOLVED = ["win", "loss", "breakeven"];
-
-function closed(trades: Trade[]): Trade[] {
-  return trades.filter((t) => RESOLVED.includes(t.result));
-}
+import { getClosedTrades } from "@/lib/utils";
 
 export function checklistPercent(score: number, total: number): number {
   if (total <= 0) return 0;
@@ -34,7 +29,7 @@ export function gradeToScore(grade: string | null): number {
 }
 
 export function averageGradeScore(trades: Trade[]): number {
-  const c = closed(trades).filter((t) => t.trade_grade);
+  const c = getClosedTrades(trades).filter((t) => t.trade_grade);
   if (c.length === 0) return 0;
   const sum = c.reduce((a, t) => a + gradeToScore(t.trade_grade), 0);
   return sum / c.length;
@@ -50,7 +45,7 @@ export interface GradeDistributionItem {
 const GRADE_ORDER = ["A+", "A", "B", "C"];
 
 export function gradeDistribution(trades: Trade[]): GradeDistributionItem[] {
-  const c = closed(trades);
+  const c = getClosedTrades(trades);
   const byGrade = new Map<string, Trade[]>();
   for (const t of c) {
     const g = t.trade_grade ?? "C";

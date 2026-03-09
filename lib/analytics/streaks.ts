@@ -2,12 +2,10 @@
  * Win/loss streak calculations.
  */
 import type { Trade } from "@/types";
-
-const RESOLVED = ["win", "loss", "breakeven"] as const;
+import { getClosedTrades } from "@/lib/utils";
 
 function sortedClosed(trades: Trade[]): Trade[] {
-  return trades
-    .filter((t) => RESOLVED.includes(t.result as typeof RESOLVED[number]))
+  return getClosedTrades(trades)
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 }
 

@@ -2,12 +2,7 @@
  * Pair/symbol performance calculations.
  */
 import type { Trade } from "@/types";
-
-const RESOLVED = ["win", "loss", "breakeven"];
-
-function closed(trades: Trade[]): Trade[] {
-  return trades.filter((t) => RESOLVED.includes(t.result));
-}
+import { safeNum, getClosedTrades } from "@/lib/utils";
 
 export interface PairStats {
   pair: string;
@@ -28,12 +23,8 @@ export interface PairStats {
   worstTrade: number;
 }
 
-function safeNum(n: number): number {
-  return Number.isFinite(n) ? n : 0;
-}
-
 export function pairPerformance(trades: Trade[]): PairStats[] {
-  const c = closed(trades);
+  const c = getClosedTrades(trades);
   const byPair = new Map<string, Trade[]>();
   for (const t of c) {
     const list = byPair.get(t.pair) ?? [];

@@ -22,6 +22,7 @@ import { ASSET_CLASS_ORDER, ASSET_CLASS_LABELS } from "@/lib/config/auraAnalysis
 import { getAssetMetadata } from "@/lib/config/auraAnalysisAssets";
 import { getEntryPlaceholder, getStopPlaceholder, getTpPlaceholder } from "@/lib/config/assetExamples";
 import { PairSelect } from "@/components/calculator/PairSelect";
+import { CalculatorResultPanel } from "@/components/calculator/CalculatorResultPanel";
 import type { Asset } from "@/types";
 
 interface TradeCalculatorFormProps {
@@ -321,42 +322,7 @@ export function TradeCalculatorForm({
           </CardContent>
         </Card>
 
-        <Card className="glass">
-          <CardHeader>
-            <CardTitle>Calculated</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            {!pair ? (
-              <p className="text-muted-foreground">Select a pair to see instrument-specific labels and calculations.</p>
-            ) : !computed ? (
-              <p className="text-muted-foreground">Enter entry, stop loss, and take profit to see risk, position size, and P/L.</p>
-            ) : (
-              <>
-                <Row label="Risk amount" value={formatCurrencySafe(computed.riskAmount)} />
-                <Row label="Stop distance (price)" value={computed.stopDistancePrice.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: instrumentSpec.pricePrecision })} />
-                <Row label="Take profit distance (price)" value={computed.takeProfitDistancePrice.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: instrumentSpec.pricePrecision })} />
-                {computed.altUnitLabel != null && computed.stopDistanceAlt != null && computed.takeProfitDistanceAlt != null && (
-                  <>
-                    <Row label={`Stop distance (${computed.altUnitLabel})`} value={formatDistance(computed.stopDistanceAlt, computed.altUnitLabel === "pips" ? "pip" : computed.altUnitLabel === "ticks" ? "ticks" : "point", 2)} />
-                    <Row label={`Take profit distance (${computed.altUnitLabel})`} value={formatDistance(computed.takeProfitDistanceAlt, computed.altUnitLabel === "pips" ? "pip" : computed.altUnitLabel === "ticks" ? "ticks" : "point", 2)} />
-                  </>
-                )}
-                <Row label="Risk:Reward" value={formatRR(computed.riskReward)} />
-                <Row label={`Position size (${computed.positionUnitLabel})`} value={formatPositionSize(computed.positionSize, computed.positionUnitLabel)} />
-                <Row label="Potential profit" value={formatCurrencySafe(computed.potentialProfit)} className="text-emerald-500" />
-                <Row label="Potential loss" value={formatCurrencySafe(computed.potentialLoss)} className="text-red-500" />
-                <Row label="R multiple (if TP hit)" value={formatRR(computed.rMultiple)} />
-                {computed.warnings.length > 0 && (
-                  <div className="mt-3 rounded-md border border-amber-500/50 bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
-                    {computed.warnings.map((w, i) => (
-                      <p key={i}>{w}</p>
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </CardContent>
-        </Card>
+        <CalculatorResultPanel pair={pair} computed={computed} instrumentSpec={instrumentSpec} />
       </div>
 
       {onSave && (
@@ -367,22 +333,5 @@ export function TradeCalculatorForm({
         </div>
       )}
     </form>
-  );
-}
-
-function Row({
-  label,
-  value,
-  className,
-}: {
-  label: string;
-  value: string;
-  className?: string;
-}) {
-  return (
-    <div className="flex justify-between">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={className}>{value}</span>
-    </div>
   );
 }

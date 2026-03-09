@@ -18,7 +18,9 @@ import {
 import {
   calculateTotalScore,
   clampPercent,
-  getScoreLabel
+  getScoreLabel,
+  buildValidatorData,
+  parseValidatorData,
 } from "@/lib/validator/scoreCalculator";
 import { ChecklistCard } from "@/components/validator/ChecklistCard";
 import { useTradesStore } from "@/lib/store/tradesStore";
@@ -43,17 +45,13 @@ export function EditTradeModal({ trade, open, onClose, onSaved }: EditTradeModal
 
   // Checklist State
   const initialChecked = useMemo(() => {
-    try {
-      const vd = typeof trade.validator_data === "string" ? JSON.parse(trade.validator_data) : trade.validator_data;
-      if (vd && vd.checklistState) {
-        return new Set<string>(
-          Object.entries(vd.checklistState)
-            .filter(([_, v]) => v)
-            .map(([k, _]) => k)
-        );
-      }
-    } catch {
-      // ignore
+    const vd = parseValidatorData(trade.validator_data);
+    if (vd && vd.checklistState) {
+      return new Set<string>(
+        Object.entries(vd.checklistState)
+          .filter(([_, v]) => v)
+          .map(([k, _]) => k)
+      );
     }
     return new Set<string>();
   }, [trade.validator_data]);
@@ -91,23 +89,7 @@ export function EditTradeModal({ trade, open, onClose, onSaved }: EditTradeModal
   async function handleSave() {
     setLoading(true);
     try {
-      const checklistState: Record<string, boolean> = {};
-      checked.forEach(id => {
-        checklistState[id] = true;
-      });
-      
-      const sectionScores: Record<string, number> = {};
-      CHECKLIST_SECTIONS.forEach(section => {
-        sectionScores[section.id] = getSectionScore(section, checked);
-      });
-
-      const validatorData = {
-        score: clampedScore,
-        status: label,
-        checklistState,
-        sectionScores,
-        completedAt: new Date().toISOString(),
-      };
+      const validatorData = buildValidatorData(checked, pointsByItemId, TOTAL_POINTS);
 
       const payload = {
         id: trade.id,
@@ -124,9 +106,13 @@ export function EditTradeModal({ trade, open, onClose, onSaved }: EditTradeModal
         validator_data: validatorData
       };
 
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       const res = await fetch("/api/aura-analysis/trades", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
         body: JSON.stringify(payload),
       });
 

@@ -2,12 +2,7 @@
  * Asset class performance (forex, metal, commodity, energy, index, crypto).
  */
 import type { Trade } from "@/types";
-
-const RESOLVED = ["win", "loss", "breakeven"];
-
-function closed(trades: Trade[]): Trade[] {
-  return trades.filter((t) => RESOLVED.includes(t.result));
-}
+import { safeNum, getClosedTrades } from "@/lib/utils";
 
 function normalizeClass(c: string): string {
   const lower = c?.toLowerCase() ?? "other";
@@ -26,12 +21,8 @@ export interface AssetClassStats {
   profitFactor: number;
 }
 
-function safeNum(n: number): number {
-  return Number.isFinite(n) ? n : 0;
-}
-
 export function assetClassPerformance(trades: Trade[]): AssetClassStats[] {
-  const c = closed(trades);
+  const c = getClosedTrades(trades);
   const byClass = new Map<string, Trade[]>();
   for (const t of c) {
     const cls = normalizeClass(t.asset_class);

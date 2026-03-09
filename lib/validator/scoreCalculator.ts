@@ -3,6 +3,8 @@
  * Total score = sum of points for checked items (max 200).
  */
 
+import { CHECKLIST_SECTIONS, getSectionScore } from "./checklistSections";
+
 export const SCORE_LABELS = {
   noTrade: "No Trade",
   weakSetup: "Weak Setup",
@@ -51,4 +53,45 @@ export function calculateTotalScore(
 /** Clamp value for progress bar. Max is now 200 */
 export function clampPercent(value: number): number {
   return Math.max(0, Math.min(200, value));
+}
+
+export function buildValidatorData(
+  checked: Set<string>,
+  pointsByItemId: Record<string, number>,
+  totalPoints: number
+) {
+  const totalScore = calculateTotalScore(checked, pointsByItemId, totalPoints);
+  const clampedScore = clampPercent(totalScore);
+  const label = getScoreLabel(totalScore);
+
+  const checklistState: Record<string, boolean> = {};
+  checked.forEach(id => {
+    checklistState[id] = true;
+  });
+  
+  const sectionScores: Record<string, number> = {};
+  CHECKLIST_SECTIONS.forEach(section => {
+    sectionScores[section.id] = getSectionScore(section, checked);
+  });
+
+  return {
+    score: clampedScore,
+    status: label,
+    checklistState,
+    sectionScores,
+    completedAt: new Date().toISOString(),
+  };
+}
+
+export function parseValidatorData(data: unknown): ReturnType<typeof buildValidatorData> | null {
+  if (!data) return null;
+  try {
+    const vd = typeof data === "string" ? JSON.parse(data) : data;
+    if (vd && typeof vd === "object") {
+      return vd as ReturnType<typeof buildValidatorData>;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
 }

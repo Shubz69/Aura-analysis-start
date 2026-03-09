@@ -1,4 +1,5 @@
 import type { Trade } from "@/types";
+import { formatDate } from "@/lib/utils";
 
 export interface EquityPoint {
   date: string;
@@ -15,7 +16,7 @@ export function buildEquityCurve(trades: Trade[], startBalance: number): EquityP
   for (const t of resolved) {
     cum += t.pnl;
     points.push({
-      date: new Date(t.closed_at ?? t.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }),
+      date: formatDate(t.closed_at ?? t.created_at),
       equity: Math.round(cum * 100) / 100,
     });
   }

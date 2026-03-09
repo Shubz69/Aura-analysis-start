@@ -100,3 +100,25 @@ export function formatRSafe(value: number, decimals = 2): string {
   if (typeof value !== "number" || !Number.isFinite(value)) return "—";
   return value.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
+
+export function formatDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return "—";
+  try {
+    return new Date(dateStr).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" });
+  } catch {
+    return "—";
+  }
+}
+
+export function formatDateTime(dateStr: string | null | undefined): string {
+  if (!dateStr) return "—";
+  try {
+    return new Date(dateStr).toLocaleString("en-US");
+  } catch {
+    return "—";
+  }
+}
+
+export function getClosedTrades<T extends { result: string }>(trades: T[]): T[] {
+  return trades.filter((t) => ["win", "loss", "breakeven"].includes(t.result));
+}

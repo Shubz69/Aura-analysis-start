@@ -10,16 +10,11 @@
  *     executionQualityScore * 0.15
  */
 import type { Trade } from "@/types";
-
-const RESOLVED = ["win", "loss", "breakeven"];
-
-function closed(trades: Trade[]): Trade[] {
-  return trades.filter((t) => RESOLVED.includes(t.result));
-}
+import { getClosedTrades } from "@/lib/utils";
 
 /** 0–100: how often risk_percent is within 0.5–2% and consistent. */
 function riskDisciplineScore(trades: Trade[]): number {
-  const c = closed(trades).filter((t) => t.risk_percent != null && t.risk_percent > 0);
+  const c = getClosedTrades(trades).filter((t) => t.risk_percent != null && t.risk_percent > 0);
   if (c.length === 0) return 50;
   const inRange = c.filter((t) => t.risk_percent >= 0.5 && t.risk_percent <= 2).length;
   const ratio = inRange / c.length;
@@ -34,7 +29,7 @@ function riskDisciplineScore(trades: Trade[]): number {
 
 /** 0–100: average checklist_percent. */
 function checklistQualityScore(trades: Trade[]): number {
-  const c = closed(trades).filter((t) => t.checklist_total > 0);
+  const c = getClosedTrades(trades).filter((t) => t.checklist_total > 0);
   if (c.length === 0) return 50;
   const avg = c.reduce((a, t) => a + t.checklist_percent, 0) / c.length;
   return Math.min(100, Math.round(avg));
@@ -42,7 +37,7 @@ function checklistQualityScore(trades: Trade[]): number {
 
 /** 0–100: trade frequency regularity (trades per week variance). */
 function journalRegularityScore(trades: Trade[]): number {
-  const c = closed(trades).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  const c = getClosedTrades(trades).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
   if (c.length < 2) return 50;
   const first = new Date(c[0].created_at).getTime();
   const last = new Date(c[c.length - 1].created_at).getTime();
@@ -59,7 +54,7 @@ function streakStabilityScore(trades: Trade[]): number {
   let maxLoss = 0;
   let curWin = 0;
   let curLoss = 0;
-  const list = closed(trades).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  const list = getClosedTrades(trades).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
   for (const t of list) {
     if (t.result === "win") {
       curWin++;
@@ -83,7 +78,7 @@ function streakStabilityScore(trades: Trade[]): number {
 
 /** 0–100: execution quality (avg R for winners, limited damage on losers). */
 function executionQualityScore(trades: Trade[]): number {
-  const c = closed(trades);
+  const c = getClosedTrades(trades);
   if (c.length === 0) return 50;
   const winners = c.filter((t) => t.result === "win");
   const losers = c.filter((t) => t.result === "loss");
@@ -106,7 +101,7 @@ const WEIGHTS = {
 } as const;
 
 export function consistencyScore(trades: Trade[]): number {
-  const c = closed(trades);
+  const c = getClosedTrades(trades);
   if (c.length < 2) return 0;
   const risk = riskDisciplineScore(trades);
   const checklist = checklistQualityScore(trades);
@@ -123,7 +118,7 @@ export function consistencyScore(trades: Trade[]): number {
 }
 
 export function consistencyScoreBreakdown(trades: Trade[]) {
-  const c = closed(trades);
+  const c = getClosedTrades(trades);
   if (c.length < 2) {
     return {
       consistencyScore: 0,

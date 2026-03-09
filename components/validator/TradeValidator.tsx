@@ -9,6 +9,7 @@ import {
   getScoreLabel,
   calculateTotalScore,
   clampPercent,
+  buildValidatorData,
 } from "@/lib/validator/scoreCalculator";
 import {
   CHECKLIST_SECTIONS,
@@ -74,27 +75,13 @@ export function TradeValidator() {
 
   const handleProceed = () => {
     if (!canProceed) return;
-    
-    const checklistState: Record<string, boolean> = {};
-    checked.forEach(id => {
-      checklistState[id] = true;
-    });
-    
-    const sectionScores: Record<string, number> = {};
-    CHECKLIST_SECTIONS.forEach(section => {
-      sectionScores[section.id] = getSectionScore(section, checked);
-    });
+
+    const validatorData = buildValidatorData(checked, pointsByItemId, TOTAL_POINTS);
 
     createDraftFromValidator(
       "EURUSD", // default symbol, user can change later in calculator
       undefined, // direction unknown at this point
-      {
-        score: clampedScore,
-        status: label,
-        checklistState,
-        sectionScores,
-        completedAt: new Date().toISOString(),
-      }
+      validatorData
     );
     
     router.push("/aura-analysis/calculator");

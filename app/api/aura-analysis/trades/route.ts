@@ -44,29 +44,27 @@ async function getFallbackUser(db: { query: (sql: string, params?: unknown[]) =>
   return { id: 1, email: "guest@example.com", username: "Guest", role: "user" };
 }
 
-export async function GET(request: NextRequest) {
+async function getAuthUser(request: NextRequest, db: any) {
   const req = {
     headers: request.headers,
     cookies: { token: request.cookies.get("token")?.value },
   };
+  let user = await getCurrentUserFromToken(req, db);
+  if (!user) {
+    user = await getFallbackUser(db);
+  }
+  return user;
+}
+
+export async function GET(request: NextRequest) {
   const db = dbAdapter();
   try {
-    let user = await getCurrentUserFromToken(req, db);
-    // Allow use without sign-in: use first user in DB when no valid token
+    const user = await getAuthUser(request, db);
     if (!user) {
-      user = await getFallbackUser(db);
-    }
-    if (!user) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401, headers: { "Cache-Control": "no-store" } }
-      );
+      return NextResponse.json({ error: "Authentication required" }, { status: 401, headers: { "Cache-Control": "no-store" } });
     }
     if (BLOCKED_ROLES.includes(user.role)) {
-      return NextResponse.json(
-        { error: "Access denied" },
-        { status: 403, headers: { "Cache-Control": "no-store" } }
-      );
+      return NextResponse.json({ error: "Access denied" }, { status: 403, headers: { "Cache-Control": "no-store" } });
     }
     const { searchParams } = new URL(request.url);
     const limit = Math.min(Number(searchParams.get("limit")) || 100, 500);
@@ -83,28 +81,14 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const req = {
-    headers: request.headers,
-    cookies: { token: request.cookies.get("token")?.value },
-  };
   const db = dbAdapter();
   try {
-    let user = await getCurrentUserFromToken(req, db);
-    // Allow use without sign-in: use first user in DB when no valid token
+    const user = await getAuthUser(request, db);
     if (!user) {
-      user = await getFallbackUser(db);
-    }
-    if (!user) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401, headers: { "Cache-Control": "no-store" } }
-      );
+      return NextResponse.json({ error: "Authentication required" }, { status: 401, headers: { "Cache-Control": "no-store" } });
     }
     if (BLOCKED_ROLES.includes(user.role)) {
-      return NextResponse.json(
-        { error: "Access denied" },
-        { status: 403, headers: { "Cache-Control": "no-store" } }
-      );
+      return NextResponse.json({ error: "Access denied" }, { status: 403, headers: { "Cache-Control": "no-store" } });
     }
     const body = await request.json();
     let trade: any = null;
@@ -212,27 +196,14 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const req = {
-    headers: request.headers,
-    cookies: { token: request.cookies.get("token")?.value },
-  };
   const db = dbAdapter();
   try {
-    let user = await getCurrentUserFromToken(req, db);
+    const user = await getAuthUser(request, db);
     if (!user) {
-      user = await getFallbackUser(db);
-    }
-    if (!user) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401, headers: { "Cache-Control": "no-store" } }
-      );
+      return NextResponse.json({ error: "Authentication required" }, { status: 401, headers: { "Cache-Control": "no-store" } });
     }
     if (BLOCKED_ROLES.includes(user.role)) {
-      return NextResponse.json(
-        { error: "Access denied" },
-        { status: 403, headers: { "Cache-Control": "no-store" } }
-      );
+      return NextResponse.json({ error: "Access denied" }, { status: 403, headers: { "Cache-Control": "no-store" } });
     }
     const body = await request.json();
     const tradeId = body.id;

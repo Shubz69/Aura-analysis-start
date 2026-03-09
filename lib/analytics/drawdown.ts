@@ -2,6 +2,7 @@
  * Drawdown calculations from equity curve.
  */
 import type { Trade } from "@/types";
+import { formatDate } from "@/lib/utils";
 
 export interface EquityPoint {
   date: string;
@@ -30,7 +31,7 @@ export function buildEquityCurveWithDrawdown(
     const drawdown = peak - equity;
     const drawdownPercent = peak > 0 ? (drawdown / peak) * 100 : 0;
     points.push({
-      date: new Date(t.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" }),
+      date: formatDate(t.created_at),
       equity: Math.round(equity * 100) / 100,
       cumulativePnL: Math.round(cumPnL * 100) / 100,
       peakEquity: peak,

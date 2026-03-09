@@ -1,6 +1,5 @@
 import type { Trade, TradeResult } from "@/types";
-
-const RESOLVED_RESULTS: TradeResult[] = ["win", "loss", "breakeven"];
+import { getClosedTrades } from "@/lib/utils";
 
 /** Legacy consistency score: checklist quality, risk discipline, R volatility. 0–100. */
 function legacyConsistencyScoreFromResolved(
@@ -29,7 +28,7 @@ function legacyConsistencyScoreFromResolved(
 }
 
 export function getResolvedTrades(trades: Trade[]): Trade[] {
-  return trades.filter((t) => RESOLVED_RESULTS.includes(t.result));
+  return getClosedTrades(trades);
 }
 
 export function totalTrades(trades: Trade[]): number {

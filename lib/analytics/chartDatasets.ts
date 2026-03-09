@@ -13,10 +13,7 @@ import { streakSummary } from "./streaks";
 import { tradesByDay, tradesByWeek, tradesByMonth, tradesByWeekday } from "./timeAnalytics";
 import { leaderboardFromTradesByUser } from "./leaderboard";
 import { buildEquityCurve } from "./equity";
-
-function safeNum(n: number): number {
-  return typeof n === "number" && Number.isFinite(n) ? n : 0;
-}
+import { safeNum } from "@/lib/utils";
 
 /** Overview page: KPIs, equity, recent trades, top pairs, session, grades. */
 export function buildOverviewDatasets(

@@ -5,6 +5,7 @@ import type { Trade } from "@/types";
 import { buildKpiSummary } from "./kpis";
 import { consistencyScore } from "./consistency";
 import { pairPerformance, mostTradedPair } from "./pairPerformance";
+import { safeNum } from "@/lib/utils";
 
 export interface LeaderboardUser {
   userId: string;
@@ -31,10 +32,6 @@ export type LeaderboardSortKey =
   | "consistencyScore"
   | "profitFactor"
   | "totalTrades";
-
-function safeNum(n: number): number {
-  return Number.isFinite(n) ? n : 0;
-}
 
 export function leaderboardFromTradesByUser(
   tradesByUser: Map<string, Trade[]>,

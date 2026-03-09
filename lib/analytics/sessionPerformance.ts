@@ -2,13 +2,9 @@
  * Session performance calculations.
  */
 import type { Trade } from "@/types";
+import { safeNum, getClosedTrades } from "@/lib/utils";
 
-const RESOLVED = ["win", "loss", "breakeven"];
 const SESSIONS = ["Asian", "London", "New York", "London/NY Overlap"] as const;
-
-function closed(trades: Trade[]): Trade[] {
-  return trades.filter((t) => RESOLVED.includes(t.result));
-}
 
 export interface SessionStats {
   session: string;
@@ -25,12 +21,8 @@ export interface SessionStats {
   expectancy: number;
 }
 
-function safeNum(n: number): number {
-  return Number.isFinite(n) ? n : 0;
-}
-
 export function sessionPerformance(trades: Trade[]): SessionStats[] {
-  const c = closed(trades);
+  const c = getClosedTrades(trades);
   const bySession = new Map<string, Trade[]>();
   for (const t of c) {
     const s = t.session ?? "Unknown";

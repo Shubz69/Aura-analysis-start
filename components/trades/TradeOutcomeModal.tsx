@@ -56,9 +56,13 @@ export function TradeOutcomeModal({ trade, open, onClose, outcomeType, onSaved }
         r_multiple: rMultiple,
       };
 
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       const res = await fetch("/api/aura-analysis/trades", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
         body: JSON.stringify(payload),
       });
 

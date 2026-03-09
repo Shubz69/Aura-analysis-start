@@ -8,10 +8,11 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { formatCurrencySafe, formatNumber, formatPositionSize, getPositionSizeKind } from "@/lib/utils";
+import { formatCurrencySafe, formatNumber, formatPositionSize, getPositionSizeKind, formatDateTime } from "@/lib/utils";
 import type { Trade, TradeChecklistItem } from "@/types";
 import { Pencil, Trash2, CheckCircle2, XCircle, MinusCircle } from "lucide-react";
 import { getChecklistItemLabel } from "@/lib/validator/checklistSections";
+import { parseValidatorData } from "@/lib/validator/scoreCalculator";
 import { TradeOutcomeModal } from "./TradeOutcomeModal";
 import { EditTradeModal } from "./EditTradeModal";
 import { useTradesStore } from "@/lib/store/tradesStore";
@@ -76,14 +77,14 @@ export function TradeDetailSheet({
         ) : trade ? (
           <div className="space-y-6 pt-4">
             <div className="grid grid-cols-2 gap-2 text-sm">
-              <LabelValue label="Date" value={new Date(trade.created_at).toLocaleString()} />
+              <LabelValue label="Date" value={formatDateTime(trade.created_at)} />
               <LabelValue label="Pair" value={trade.pair} />
               <LabelValue label="Asset class" value={trade.asset_class} />
               <LabelValue label="Direction" value={trade.direction} />
               <LabelValue label="Session" value={trade.session ?? "—"} />
               <LabelValue label="Result" value={trade.result} />
               {trade.result !== "open" && trade.closed_at && (
-                <LabelValue label="Closed date" value={new Date(trade.closed_at).toLocaleString()} />
+                <LabelValue label="Closed date" value={formatDateTime(trade.closed_at)} />
               )}
               {trade.result !== "open" && trade.close_price != null && (
                 <LabelValue label="Close price" value={formatNumber(trade.close_price)} />
@@ -102,9 +103,7 @@ export function TradeDetailSheet({
             </div>
             
             {(() => {
-              const vd = typeof trade.validator_data === "string" 
-                ? (function() { try { return JSON.parse(trade.validator_data); } catch { return null; } })() 
-                : trade.validator_data;
+              const vd = parseValidatorData(trade.validator_data);
                 
               if (!vd || !vd.checklistState) return null;
               

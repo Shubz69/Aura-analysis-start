@@ -18,8 +18,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Plus, BarChart3, AlertCircle } from "lucide-react";
-import { formatCurrencySafe, formatPercentSafe, formatRSafe } from "@/lib/utils";
+import { formatCurrencySafe, formatPercentSafe, formatRSafe, formatDate } from "@/lib/utils";
 import { TradingCalendar, type CalendarTrade } from "@/components/dashboard/TradingCalendar";
+import { TradeStatusBadge } from "@/components/trades/TradeStatusBadge";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { buildOverviewDatasets } from "@/lib/analytics/chartDatasets";
 import { useEffect, useState, useMemo } from "react";
@@ -282,13 +283,15 @@ export function OverviewClient({
                         onClick={() => !t.id.startsWith("demo") && router.push(`/aura-analysis/journal?trade=${t.id}`)}
                       >
                         <TableCell className="text-muted-foreground text-xs sm:text-sm">
-                          {new Date(t.created_at).toLocaleDateString()}
+                          {formatDate(t.created_at)}
                         </TableCell>
                         <TableCell className="font-medium">{t.pair}</TableCell>
                         <TableCell className="hidden sm:table-cell">{t.direction}</TableCell>
-                        <TableCell>{t.result}</TableCell>
-                        <TableCell className={`text-right font-medium ${t.pnl >= 0 ? "text-emerald-500" : "text-red-500"}`}>
-                          {formatCurrencySafe(t.pnl)}
+                        <TableCell>
+                          <TradeStatusBadge status={t.result} />
+                        </TableCell>
+                        <TableCell className={`text-right font-medium ${t.result === "open" ? "text-muted-foreground" : t.pnl >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                          {t.result === "open" ? "—" : formatCurrencySafe(t.pnl)}
                         </TableCell>
                       </TableRow>
                     ))}

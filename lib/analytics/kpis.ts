@@ -3,16 +3,7 @@
  * All formulas documented; safe for empty/missing data.
  */
 import type { Trade, TradeResult } from "@/types";
-
-const RESOLVED: TradeResult[] = ["win", "loss", "breakeven"];
-
-function resolved(trades: Trade[]): Trade[] {
-  return trades.filter((t) => RESOLVED.includes(t.result));
-}
-
-function closed(trades: Trade[]): Trade[] {
-  return resolved(trades);
-}
+import { getClosedTrades } from "@/lib/utils";
 
 export function totalTrades(trades: Trade[]): number {
   return trades.length;
@@ -23,55 +14,55 @@ export function openTrades(trades: Trade[]): number {
 }
 
 export function closedTrades(trades: Trade[]): number {
-  return closed(trades).length;
+  return getClosedTrades(trades).length;
 }
 
 export function wins(trades: Trade[]): number {
-  return closed(trades).filter((t) => t.result === "win").length;
+  return getClosedTrades(trades).filter((t) => t.result === "win").length;
 }
 
 export function losses(trades: Trade[]): number {
-  return closed(trades).filter((t) => t.result === "loss").length;
+  return getClosedTrades(trades).filter((t) => t.result === "loss").length;
 }
 
 export function breakevens(trades: Trade[]): number {
-  return closed(trades).filter((t) => t.result === "breakeven").length;
+  return getClosedTrades(trades).filter((t) => t.result === "breakeven").length;
 }
 
 export function winRate(trades: Trade[]): number {
-  const c = closed(trades);
+  const c = getClosedTrades(trades);
   if (c.length === 0) return 0;
   return (wins(trades) / c.length) * 100;
 }
 
 export function lossRate(trades: Trade[]): number {
-  const c = closed(trades);
+  const c = getClosedTrades(trades);
   if (c.length === 0) return 0;
   return (losses(trades) / c.length) * 100;
 }
 
 export function breakevenRate(trades: Trade[]): number {
-  const c = closed(trades);
+  const c = getClosedTrades(trades);
   if (c.length === 0) return 0;
   return (breakevens(trades) / c.length) * 100;
 }
 
 export function totalPnL(trades: Trade[]): number {
-  return closed(trades).reduce((a, t) => a + t.pnl, 0);
+  return getClosedTrades(trades).reduce((a, t) => a + t.pnl, 0);
 }
 
 export function averagePnL(trades: Trade[]): number {
-  const c = closed(trades);
+  const c = getClosedTrades(trades);
   if (c.length === 0) return 0;
   return totalPnL(trades) / c.length;
 }
 
 export function totalR(trades: Trade[]): number {
-  return closed(trades).reduce((a, t) => a + t.r_multiple, 0);
+  return getClosedTrades(trades).reduce((a, t) => a + t.r_multiple, 0);
 }
 
 export function averageR(trades: Trade[]): number {
-  const c = closed(trades).filter((t) => t.result !== "breakeven");
+  const c = getClosedTrades(trades).filter((t) => t.result !== "breakeven");
   if (c.length === 0) return 0;
   return c.reduce((a, t) => a + t.r_multiple, 0) / c.length;
 }
@@ -84,17 +75,17 @@ export function averageRR(trades: Trade[]): number {
 }
 
 export function totalRiskAmount(trades: Trade[]): number {
-  return closed(trades).reduce((a, t) => a + (t.risk_amount ?? 0), 0);
+  return getClosedTrades(trades).reduce((a, t) => a + (t.risk_amount ?? 0), 0);
 }
 
 export function averageRiskPercent(trades: Trade[]): number {
-  const c = closed(trades).filter((t) => t.risk_percent != null && t.risk_percent > 0);
+  const c = getClosedTrades(trades).filter((t) => t.risk_percent != null && t.risk_percent > 0);
   if (c.length === 0) return 0;
   return c.reduce((a, t) => a + t.risk_percent, 0) / c.length;
 }
 
 export function profitFactor(trades: Trade[]): number {
-  const c = closed(trades);
+  const c = getClosedTrades(trades);
   const grossProfit = c.filter((t) => t.pnl > 0).reduce((a, t) => a + t.pnl, 0);
   const grossLoss = Math.abs(c.filter((t) => t.pnl < 0).reduce((a, t) => a + t.pnl, 0));
   if (grossLoss === 0) return grossProfit > 0 ? Infinity : 0;
@@ -103,7 +94,7 @@ export function profitFactor(trades: Trade[]): number {
 
 /** Expectancy in R: (winRate * avgWinR) - (lossRate * avgLossR). */
 export function expectancy(trades: Trade[]): number {
-  const c = closed(trades);
+  const c = getClosedTrades(trades);
   if (c.length === 0) return 0;
   const wr = winRate(trades) / 100;
   const lr = lossRate(trades) / 100;
@@ -115,20 +106,20 @@ export function expectancy(trades: Trade[]): number {
 }
 
 export function bestTradePnL(trades: Trade[]): number {
-  const c = closed(trades);
+  const c = getClosedTrades(trades);
   if (c.length === 0) return 0;
   return Math.max(...c.map((t) => t.pnl));
 }
 
 export function worstTradePnL(trades: Trade[]): number {
-  const c = closed(trades);
+  const c = getClosedTrades(trades);
   if (c.length === 0) return 0;
   return Math.min(...c.map((t) => t.pnl));
 }
 
 export function bestPair(trades: Trade[]): string | null {
   const byPair: Record<string, number> = {};
-  closed(trades).forEach((t) => {
+  getClosedTrades(trades).forEach((t) => {
     byPair[t.pair] = (byPair[t.pair] ?? 0) + t.pnl;
   });
   let best: string | null = null;
@@ -144,7 +135,7 @@ export function bestPair(trades: Trade[]): string | null {
 
 export function worstPair(trades: Trade[]): string | null {
   const byPair: Record<string, number> = {};
-  closed(trades).forEach((t) => {
+  getClosedTrades(trades).forEach((t) => {
     byPair[t.pair] = (byPair[t.pair] ?? 0) + t.pnl;
   });
   let worst: string | null = null;
@@ -160,7 +151,7 @@ export function worstPair(trades: Trade[]): string | null {
 
 export function bestSession(trades: Trade[]): string | null {
   const bySession: Record<string, number> = {};
-  closed(trades).forEach((t) => {
+  getClosedTrades(trades).forEach((t) => {
     const s = t.session ?? "Unknown";
     bySession[s] = (bySession[s] ?? 0) + t.pnl;
   });
@@ -177,7 +168,7 @@ export function bestSession(trades: Trade[]): string | null {
 
 export function worstSession(trades: Trade[]): string | null {
   const bySession: Record<string, number> = {};
-  closed(trades).forEach((t) => {
+  getClosedTrades(trades).forEach((t) => {
     const s = t.session ?? "Unknown";
     bySession[s] = (bySession[s] ?? 0) + t.pnl;
   });
@@ -193,13 +184,13 @@ export function worstSession(trades: Trade[]): string | null {
 }
 
 export function averageChecklistPercent(trades: Trade[]): number {
-  const c = closed(trades).filter((t) => t.checklist_total > 0);
+  const c = getClosedTrades(trades).filter((t) => t.checklist_total > 0);
   if (c.length === 0) return 0;
   return c.reduce((a, t) => a + t.checklist_percent, 0) / c.length;
 }
 
 export function averageChecklistScore(trades: Trade[]): number {
-  const c = closed(trades).filter((t) => t.checklist_total > 0);
+  const c = getClosedTrades(trades).filter((t) => t.checklist_total > 0);
   if (c.length === 0) return 0;
   return c.reduce((a, t) => a + t.checklist_score, 0) / c.length;
 }
@@ -216,7 +207,7 @@ export function gradeToScore(grade: string | null): number {
 }
 
 export function averageTradeGradeScore(trades: Trade[]): number {
-  const c = closed(trades).filter((t) => t.trade_grade);
+  const c = getClosedTrades(trades).filter((t) => t.trade_grade);
   if (c.length === 0) return 0;
   const sum = c.reduce((a, t) => a + gradeToScore(t.trade_grade), 0);
   return sum / c.length;
@@ -224,7 +215,7 @@ export function averageTradeGradeScore(trades: Trade[]): number {
 
 /** Full KPI summary for overview. */
 export function buildKpiSummary(trades: Trade[]) {
-  const c = closed(trades);
+  const c = getClosedTrades(trades);
   const safe = (n: number) => (Number.isFinite(n) ? n : 0);
   const pf = profitFactor(trades);
   return {

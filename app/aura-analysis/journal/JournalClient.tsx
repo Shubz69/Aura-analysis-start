@@ -5,14 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -21,9 +13,10 @@ import {
 } from "@/components/ui/select";
 import { TradeDetailSheet } from "@/components/trades/TradeDetailSheet";
 import { TradeOutcomeModal } from "@/components/trades/TradeOutcomeModal";
+import { JournalTable } from "@/components/trades/JournalTable";
 import { EmptyState } from "@/components/dashboard/EmptyState";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatCurrencySafe, formatNumber } from "@/lib/utils";
+import { formatCurrencySafe, formatNumber, formatDate } from "@/lib/utils";
 import type { Trade } from "@/types";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -216,88 +209,17 @@ export function JournalClient({ initialTrades, openTradeId }: JournalClientProps
         <>
           <Card className="glass overflow-hidden">
             <CardContent className="p-0">
-            <div className="rounded-md overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Pair</TableHead>
-                  <TableHead>Asset class</TableHead>
-                  <TableHead>Dir</TableHead>
-                  <TableHead>Entry</TableHead>
-                  <TableHead>SL</TableHead>
-                  <TableHead>TP</TableHead>
-                  <TableHead>Risk %</TableHead>
-                  <TableHead>Result</TableHead>
-                  <TableHead className="text-right">PnL</TableHead>
-                  <TableHead className="text-right">R</TableHead>
-                  <TableHead>Session</TableHead>
-                  <TableHead>Grade</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginated.map((t) => (
-                  <TableRow
-                    key={t.id}
-                    className="cursor-pointer"
-                    onClick={() => openTrade(t.id)}
-                  >
-                    <TableCell className="text-muted-foreground">
-                      {new Date(t.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>{t.pair}</TableCell>
-                    <TableCell>{t.asset_class}</TableCell>
-                    <TableCell>{t.direction}</TableCell>
-                    <TableCell>{formatNumber(t.entry_price)}</TableCell>
-                    <TableCell>{formatNumber(t.stop_loss)}</TableCell>
-                    <TableCell>{formatNumber(t.take_profit)}</TableCell>
-                    <TableCell>{t.risk_percent}%</TableCell>
-                    <TableCell>
-                      {t.result === "open" ? (
-                        <span className="bg-muted px-2 py-1 rounded-md text-xs font-medium uppercase">Open</span>
-                      ) : t.result === "win" ? (
-                        <span className="bg-emerald-500/20 text-emerald-500 px-2 py-1 rounded-md text-xs font-medium uppercase">Win</span>
-                      ) : t.result === "loss" ? (
-                        <span className="bg-red-500/20 text-red-500 px-2 py-1 rounded-md text-xs font-medium uppercase">Loss</span>
-                      ) : (
-                        <span className="bg-blue-500/20 text-blue-500 px-2 py-1 rounded-md text-xs font-medium uppercase">BE</span>
-                      )}
-                    </TableCell>
-                    <TableCell className={`text-right ${t.result === "open" ? "text-muted-foreground" : t.pnl >= 0 ? "text-emerald-500" : "text-red-500"}`}>
-                      {t.result === "open" ? "—" : formatCurrencySafe(t.pnl)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {t.result === "open" ? "—" : formatNumber(t.r_multiple, 2)}
-                    </TableCell>
-                    <TableCell>{t.session ?? "—"}</TableCell>
-                    <TableCell>{t.trade_grade ?? "—"}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                        {t.result === "open" ? (
-                          <>
-                            <Button variant="ghost" size="sm" className="h-8 px-2 text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10" onClick={() => setOutcomeAction({ trade: t, type: "win" })}>
-                              Win
-                            </Button>
-                            <Button variant="ghost" size="sm" className="h-8 px-2 text-red-500 hover:text-red-400 hover:bg-red-500/10" onClick={() => setOutcomeAction({ trade: t, type: "loss" })}>
-                              Loss
-                            </Button>
-                            <Button variant="ghost" size="sm" className="h-8 px-2 text-blue-500 hover:text-blue-400 hover:bg-blue-500/10" onClick={() => setOutcomeAction({ trade: t, type: "breakeven" })}>
-                              BE
-                            </Button>
-                          </>
-                        ) : (
-                          <Button variant="ghost" size="sm" className="h-8 px-2 text-muted-foreground hover:text-foreground" onClick={() => setOutcomeAction({ trade: t, type: t.result as any })}>
-                            Edit Outcome
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            </div>
+              <JournalTable 
+                trades={paginated} 
+                onOpenTrade={openTrade} 
+                onAction={(action) => {
+                  if (action.type === "edit_outcome") {
+                    setOutcomeAction({ trade: action.trade, type: action.trade.result as any });
+                  } else {
+                    setOutcomeAction({ trade: action.trade, type: action.type as any });
+                  }
+                }} 
+              />
             </CardContent>
           </Card>
           {totalPages > 1 && (

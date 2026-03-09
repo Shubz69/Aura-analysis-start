@@ -246,7 +246,16 @@ export async function updateTrade(
   addField("asset_class", updates.asset_class);
   addField("direction", updates.direction);
   addField("session", updates.session);
+  addField("account_balance", updates.account_balance);
   addField("entry_price", updates.entry_price);
+  addField("risk_percent", updates.risk_percent);
+  addField("risk_amount", updates.risk_amount);
+  addField("stop_loss_pips", updates.stop_loss_pips);
+  addField("take_profit_pips", updates.take_profit_pips);
+  addField("rr", updates.rr);
+  addField("position_size", updates.position_size);
+  addField("potential_profit", updates.potential_profit);
+  addField("potential_loss", updates.potential_loss);
   addField("stop_loss", updates.stop_loss);
   addField("take_profit", updates.take_profit);
   addField("result", updates.result);

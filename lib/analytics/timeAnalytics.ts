@@ -2,12 +2,7 @@
  * Time-based analytics: by day, week, month, weekday.
  */
 import type { Trade } from "@/types";
-
-const RESOLVED = ["win", "loss", "breakeven"];
-
-function closed(trades: Trade[]): Trade[] {
-  return trades.filter((t) => RESOLVED.includes(t.result));
-}
+import { getClosedTrades } from "@/lib/utils";
 
 function toDateKey(d: Date): string {
   return d.toISOString().slice(0, 10);
@@ -56,7 +51,7 @@ export interface WeekdayStats {
 const WEEKDAY_NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 export function tradesByDay(trades: Trade[]): DayStats[] {
-  const c = closed(trades);
+  const c = getClosedTrades(trades);
   const byDay = new Map<string, Trade[]>();
   for (const t of c) {
     const key = toDateKey(new Date(t.created_at));
@@ -77,7 +72,7 @@ export function tradesByDay(trades: Trade[]): DayStats[] {
 }
 
 export function tradesByWeek(trades: Trade[]): WeekStats[] {
-  const c = closed(trades);
+  const c = getClosedTrades(trades);
   const byWeek = new Map<string, Trade[]>();
   for (const t of c) {
     const key = toWeekKey(new Date(t.created_at));
@@ -95,7 +90,7 @@ export function tradesByWeek(trades: Trade[]): WeekStats[] {
 }
 
 export function tradesByMonth(trades: Trade[]): MonthStats[] {
-  const c = closed(trades);
+  const c = getClosedTrades(trades);
   const byMonth = new Map<string, Trade[]>();
   for (const t of c) {
     const key = toMonthKey(new Date(t.created_at));
@@ -117,7 +112,7 @@ export function tradesByMonth(trades: Trade[]): MonthStats[] {
 }
 
 export function tradesByWeekday(trades: Trade[]): WeekdayStats[] {
-  const c = closed(trades);
+  const c = getClosedTrades(trades);
   const byWeekday = new Map<number, Trade[]>();
   for (const t of c) {
     const day = new Date(t.created_at).getDay();
