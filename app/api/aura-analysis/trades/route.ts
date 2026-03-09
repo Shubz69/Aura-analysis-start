@@ -20,9 +20,27 @@ async function getFallbackUser(db: { query: (sql: string, params?: unknown[]) =>
   } catch (e) {
     // Ignore query errors
   }
-  // Return a dummy user if no users exist in the DB, so the app doesn't block usage.
-  // Note: if your database has a strict foreign key on user_id, saving may throw a 500 error 
-  // until a real user is created, but the calculator and UI will still work.
+  
+  // If we reach here, the users table is empty (or missing).
+  // We MUST insert a dummy user so the foreign key `user_id` constraint doesn't block saving trades!
+  try {
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(255) NOT NULL,
+        username VARCHAR(255),
+        role VARCHAR(50) DEFAULT 'user'
+      )
+    `);
+    await db.query(`
+      INSERT IGNORE INTO users (id, email, username, role) 
+      VALUES (1, 'guest@example.com', 'Guest', 'user')
+    `);
+  } catch (e) {
+    console.warn("Failed to create/insert fallback user into DB", e);
+  }
+
+  // Return the dummy user
   return { id: 1, email: "guest@example.com", username: "Guest", role: "user" };
 }
 
@@ -90,6 +108,46 @@ export async function POST(request: NextRequest) {
     }
     const body = await request.json();
     let trade: any = null;
+
+    // Auto-initialize the tables if they don't exist so users don't get stuck
+    try {
+      await db.query(`
+        CREATE TABLE IF NOT EXISTS aura_analysis_trades (
+          id INT AUTO_INCREMENT PRIMARY KEY,
+          user_id INT NOT NULL,
+          pair VARCHAR(50) NOT NULL,
+          asset_id INT DEFAULT NULL,
+          asset_class VARCHAR(50) NOT NULL,
+          direction VARCHAR(10) NOT NULL,
+          session VARCHAR(50) DEFAULT NULL,
+          account_balance DECIMAL(15,2) NOT NULL,
+          risk_percent DECIMAL(8,4) NOT NULL,
+          risk_amount DECIMAL(15,2) NOT NULL,
+          entry_price DECIMAL(20,8) NOT NULL,
+          stop_loss DECIMAL(20,8) NOT NULL,
+          take_profit DECIMAL(20,8) NOT NULL,
+          stop_loss_pips DECIMAL(20,4) NOT NULL,
+          take_profit_pips DECIMAL(20,4) NOT NULL,
+          rr DECIMAL(12,4) NOT NULL,
+          position_size DECIMAL(20,8) NOT NULL,
+          potential_profit DECIMAL(15,2) NOT NULL,
+          potential_loss DECIMAL(15,2) NOT NULL,
+          result VARCHAR(20) DEFAULT 'open',
+          pnl DECIMAL(15,2) DEFAULT 0,
+          r_multiple DECIMAL(12,4) DEFAULT 0,
+          checklist_score INT DEFAULT 0,
+          checklist_total INT DEFAULT 0,
+          checklist_percent DECIMAL(8,2) DEFAULT 0,
+          trade_grade VARCHAR(10) DEFAULT NULL,
+          notes TEXT DEFAULT NULL,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+      `);
+    } catch (err) {
+      console.warn("Auto-migrate trades table failed", err);
+    }
+
     try {
       trade = await insertTrade(user.id, {
         pair: body.pair ?? "",
@@ -123,16 +181,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (!trade) {
-      // Mock successful response if DB isn't configured, empty, or insert fails
       return NextResponse.json(
-        {
-          id: `mock-${Date.now()}`,
-          user_id: user.id,
-          ...body,
-          result: body.result || "open",
-          created_at: new Date().toISOString(),
-        },
-        { status: 201, headers: { "Cache-Control": "no-store" } }
+        { error: "Failed to create trade in database. Please ensure your database is connected and tables are created." },
+        { status: 500 }
       );
     }
     return NextResponse.json(trade, {

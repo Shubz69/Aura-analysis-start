@@ -44,9 +44,14 @@ export function TradeCalculatorPageClient({
     setSaving(true);
     const asset = assets.find((a) => a.symbol === values.pair);
     const assetClass = asset?.asset_class ?? "forex";
+    
+    // Default assets use string IDs like "def-eurusd-0". The DB expects an INT or NULL.
+    const isDefaultAsset = String(asset?.id).startsWith("def-");
+    const assetId = asset?.id && !isDefaultAsset ? Number(asset.id) : null;
+
     const payload = {
       pair: values.pair,
-      asset_id: asset?.id ?? null,
+      asset_id: assetId,
       asset_class: assetClass,
       direction: values.direction,
       session: values.session || null,
